@@ -186,7 +186,29 @@ body {
   font-weight: 700;
   cursor: pointer;
 }
+.input-field {
+  width: 100%;
+  padding: 14px 15px;
+  margin-bottom: 12px;
 
+  background: #0d1a15;
+  color: var(--white);
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  font-size: 15px;
+  outline: none;
+}
+
+.input-field::placeholder {
+  color: var(--gray);
+}
+
+.input-field:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(41, 232, 111, 0.10);
+}
 /* JUGADORES */
 
 .section-title {
