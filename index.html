@@ -70,13 +70,38 @@
 
   <p id="estado-auth"></p>
 </section>
-    <section id="proximo-partido">
-  <h2>Próximo partido</h2>
+    <section id="proximo-partido" class="card">
+
+  <p class="card-title">⚽ Próximo partido</p>
+
+  <h2 class="partido-fecha">
+    Próximo partido
+  </h2>
   <div id="datos-partido">
     <p>Cargando partido...</p>
   </div>
-          <button onclick="anotarme()">Anotarme</button>
-<p id="estado-inscripcion"></p>
+      <div class="cupo-card">
+
+  <div class="cupo-header">
+    <span class="card-title">Jugadores</span>
+    <span class="cupo-numero" id="cupo-numero">0 / 14</span>
+  </div>
+
+  <div class="barra">
+    <div
+      class="barra-progreso"
+      id="barra-cupo"
+      style="width: 0%;">
+    </div>
+  </div>
+
+  <p class="lugares" id="lugares-disponibles">
+    14 lugares disponibles
+  </p>
+
+</div>
+          <button class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
+<p id="estado-inscripcion" class="estado"></p>
 </section>
     <section id="inscriptos">
   <h2>Inscriptos</h2>
@@ -193,13 +218,31 @@ contenedor.innerHTML = `
     console.error(error);
     return;
   }
-const contador = document.getElementById("contador-inscriptos");
+const cantidad = data.filter(
+  inscripcion => inscripcion.estado === "titular"
+).length;
 
-const cantidad = data.length;
 const lugares = Math.max(14 - cantidad, 0);
+const porcentaje = Math.min((cantidad / 14) * 100, 100);
 
-contador.textContent =
-  `${cantidad} de 14 inscriptos · ${lugares} lugares disponibles`;
+const cupoNumero = document.getElementById("cupo-numero");
+const barraCupo = document.getElementById("barra-cupo");
+const lugaresDisponibles = document.getElementById("lugares-disponibles");
+
+if (cupoNumero) {
+  cupoNumero.textContent = `${cantidad} / 14`;
+}
+
+if (barraCupo) {
+  barraCupo.style.width = `${porcentaje}%`;
+}
+
+if (lugaresDisponibles) {
+  lugaresDisponibles.textContent =
+    lugares === 1
+      ? "1 lugar disponible"
+      : `${lugares} lugares disponibles`;
+}
   if (!data || data.length === 0) {
     contenedor.innerHTML = "<p>Todavía no hay jugadores inscriptos.</p>";
     return;
