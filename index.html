@@ -42,29 +42,31 @@
 
 <body>
 
-  <header>
+  <header class="logo">
     <h1>⚽ Fulbo Manager</h1>
     <p>Organizá tus partidos. Armá tus equipos. Jugá.</p>
   </header>
 
-  <main>
-    <section id="acceso">
-  <h2>Ingresar</h2>
+  <main class="app">
+    <section id="acceso" class="card">
+  <h2 class="section-title">Ingresar</h2>
 
   <input
     type="email"
     id="email"
+    class="input-field"
     placeholder="Tu email"
   >
 
   <input
     type="password"
     id="password"
+    class="input-field"
     placeholder="Tu contraseña"
   >
 
-  <button onclick="registrarse()">Registrarme</button>
-  <button onclick="iniciarSesion()">Iniciar sesión</button>
+<button class="btn-secondary" onclick="registrarse()">Registrarme</button>
+<button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
 
   <p id="estado-auth"></p>
 </section>
