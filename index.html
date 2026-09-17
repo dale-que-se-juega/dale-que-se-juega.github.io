@@ -103,8 +103,8 @@
           <button class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
 <p id="estado-inscripcion" class="estado"></p>
 </section>
-    <section id="inscriptos">
-  <h2>Inscriptos</h2>
+    <section id="inscriptos" class="card">
+  <h2 class="section-title">Inscriptos</h2>
       <p id="contador-inscriptos"></p>
   <div id="lista-inscriptos">
     <p>Cargando inscriptos...</p>
@@ -252,20 +252,56 @@ if (lugaresDisponibles) {
 const suplentes = data.filter(inscripcion => inscripcion.estado === "suplente");
 
 contenedor.innerHTML = `
-  <h3>Titulares (${titulares.length})</h3>
+  <h3 class="section-title">Titulares (${titulares.length})</h3>
 
   ${titulares.map(inscripcion => `
-    <p>⚽ <strong>${inscripcion.jugadores.alias}</strong></p>
+    <div class="jugador">
+      <div class="avatar">
+        ${inscripcion.jugadores.alias.charAt(0).toUpperCase()}
+      </div>
+
+      <div class="jugador-info">
+        <div class="jugador-nombre">
+          ${inscripcion.jugadores.alias}
+        </div>
+
+        <div class="jugador-estado">
+          Confirmado para el partido
+        </div>
+      </div>
+
+      <span class="badge">
+        Titular
+      </span>
+    </div>
   `).join("")}
 
-  <h3>Suplentes (${suplentes.length})</h3>
+  <h3 class="section-title">Suplentes (${suplentes.length})</h3>
 
   ${
     suplentes.length > 0
       ? suplentes.map(inscripcion => `
-          <p>🪑 <strong>${inscripcion.jugadores.alias}</strong></p>
+          <div class="jugador">
+            <div class="avatar">
+              ${inscripcion.jugadores.alias.charAt(0).toUpperCase()}
+            </div>
+
+            <div class="jugador-info">
+              <div class="jugador-nombre">
+                ${inscripcion.jugadores.alias}
+              </div>
+
+              <div class="jugador-estado">
+                En lista de espera
+              </div>
+            </div>
+
+            <span class="badge">
+              Suplente
+            </span>
+          </div>
         `).join("")
-      : "<p>No hay suplentes.</p>"
+      : "<p class='estado'>No hay suplentes.</p>"
   }
 `;
 }
