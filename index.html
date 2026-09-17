@@ -169,8 +169,26 @@ async function iniciarSesion() {
   }
 
   contenedor.innerHTML = data.map(jugador => `
-    <p>⚽ <strong>${jugador.alias}</strong></p>
-  `).join("");
+  <div class="jugador">
+
+    <div class="avatar">
+      ${jugador.alias.charAt(0).toUpperCase()}
+    </div>
+
+    <div class="jugador-info">
+
+      <div class="jugador-nombre">
+        ${jugador.alias}
+      </div>
+
+      <div class="jugador-estado">
+        Jugador del grupo
+      </div>
+
+    </div>
+
+  </div>
+`).join("");
 }
 async function cargarPartidos() {
   const { data, error } = await db
