@@ -100,8 +100,8 @@
   </p>
 
 </div>
-          <button class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
-      <button class="btn-secondary" onclick="bajarme()">Bajarme del partido</button>
+  <button id="btn-anotarme" class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
+<button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
 </section>
     <section id="inscriptos" class="card">
@@ -385,6 +385,7 @@ if (error) {
 
 estado.textContent = "Te anotaste correctamente.";
 cargarInscriptos();
+    actualizarBotonesInscripcion();
 }
   async function bajarme() {
   const estado = document.getElementById("estado-inscripcion");
@@ -421,10 +422,48 @@ cargarInscriptos();
 
   estado.textContent = "Te bajaste del partido correctamente.";
   cargarInscriptos();
+    actualizarBotonesInscripcion();
+}
+  async function actualizarBotonesInscripcion() {
+  const btnAnotarme = document.getElementById("btn-anotarme");
+  const btnBajarme = document.getElementById("btn-bajarme");
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) {
+    btnAnotarme.style.display = "block";
+    btnBajarme.style.display = "none";
+    return;
+  }
+
+  const { data: jugador } = await db
+    .from("jugadores")
+    .select("id")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  if (!jugador) {
+    btnAnotarme.style.display = "block";
+    btnBajarme.style.display = "none";
+    return;
+  }
+
+  const { data: inscripciones } = await db
+    .from("inscripciones")
+    .select("id")
+    .eq("partido_id", 1)
+    .eq("jugador_id", jugador.id)
+    .limit(1);
+
+  const estaAnotado = inscripciones && inscripciones.length > 0;
+
+  btnAnotarme.style.display = estaAnotado ? "none" : "block";
+  btnBajarme.style.display = estaAnotado ? "block" : "none";
 }
 cargarJugadores();
   cargarPartidos();
   cargarInscriptos();
+  actualizarBotonesInscripcion();
 </script>
 </body>
 </html>
