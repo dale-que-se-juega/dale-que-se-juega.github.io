@@ -101,6 +101,7 @@
 
 </div>
           <button class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
+      <button class="btn-secondary" onclick="bajarme()">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
 </section>
     <section id="inscriptos" class="card">
@@ -326,6 +327,68 @@ contenedor.innerHTML = `
   async function anotarme() {
   const estado = document.getElementById("estado-inscripcion");
 
+const { data: { user } } = await db.auth.getUser();
+
+if (!user) {
+  estado.textContent = "Primero tenés que iniciar sesión.";
+  return;
+}
+
+const { data: jugador, error: errorJugador } = await db
+  .from("jugadores")
+  .select("id")
+  .eq("email", user.email)
+  .single();
+
+if (errorJugador || !jugador) {
+  estado.textContent = "No encontramos tu jugador.";
+  return;
+}
+
+const { data: inscripcionExistente } = await db
+  .from("inscripciones")
+  .select("id")
+  .eq("partido_id", 1)
+  .eq("jugador_id", jugador.id)
+  .maybeSingle();
+
+if (inscripcionExistente) {
+  estado.textContent = "Ya estás anotado en este partido.";
+  return;
+}
+
+const { count, error: errorCupo } = await db
+  .from("inscripciones")
+  .select("*", { count: "exact", head: true })
+  .eq("partido_id", 1)
+  .eq("estado", "titular");
+
+if (errorCupo) {
+  estado.textContent = "Error al comprobar los lugares disponibles.";
+  return;
+}
+
+const nuevoEstado = count < 14 ? "titular" : "suplente";
+
+const { error } = await db
+  .from("inscripciones")
+  .insert({
+    partido_id: 1,
+    jugador_id: jugador.id,
+    estado: nuevoEstado
+  });
+
+if (error) {
+  estado.textContent = "Error al anotarte: " + error.message;
+  return;
+}
+
+estado.textContent = "Te anotaste correctamente.";
+cargarInscriptos();
+}
+  async function bajarme() {
+  const estado = document.getElementById("estado-inscripcion");
+
   const { data: { user } } = await db.auth.getUser();
 
   if (!user) {
@@ -340,52 +403,23 @@ contenedor.innerHTML = `
     .single();
 
   if (errorJugador || !jugador) {
-    estado.textContent = "No encontramos un jugador asociado a este usuario.";
+    estado.textContent = "No encontramos tu jugador.";
     return;
   }
-    const { data: yaInscripto, error: errorDuplicado } = await db
-  .from("inscripciones")
-  .select("id")
-  .eq("partido_id", 1)
-  .eq("jugador_id", jugador.id)
-  .maybeSingle();
-
-if (errorDuplicado) {
-  estado.textContent = "Error al verificar la inscripción.";
-  return;
-}
-
-if (yaInscripto) {
-  estado.textContent = "Ya estás anotado en este partido.";
-  return;
-}
-    const { count, error: errorCupo } = await db
-  .from("inscripciones")
-  .select("*", { count: "exact", head: true })
-  .eq("partido_id", 1)
-  .eq("estado", "titular");
-
-if (errorCupo) {
-  estado.textContent = "Error al verificar los cupos.";
-  return;
-}
-
-const nuevoEstado = count < 14 ? "titular" : "suplente";
 
   const { error } = await db
     .from("inscripciones")
-    .insert({
-      partido_id: 1,
-      jugador_id: jugador.id,
-     estado: nuevoEstado
-    });
+    .delete()
+    .eq("partido_id", 1)
+    .eq("jugador_id", jugador.id);
 
   if (error) {
-    estado.textContent = "Error al anotarte: " + error.message;
+    estado.textContent = "Error al bajarte del partido.";
+    console.error(error);
     return;
   }
 
-  estado.textContent = "Te anotaste correctamente.";
+  estado.textContent = "Te bajaste del partido correctamente.";
   cargarInscriptos();
 }
 cargarJugadores();
