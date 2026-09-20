@@ -262,20 +262,35 @@ a {
   z-index: 1;
 }
 
-.btn-admin-partido {
+.acciones-admin-partido {
   position: relative;
   z-index: 2;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin: -5px 0 12px;
+}
+
+.btn-admin-partido,
+.btn-finalizar-partido {
+  position: relative;
   width: 100%;
   min-height: 42px;
-  margin: -5px 0 12px;
-  border: 1px solid rgba(121, 212, 245, 0.55);
   border-radius: 13px;
   background: rgba(7, 16, 20, 0.84);
-  color: var(--sky);
   font-family: var(--display);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.btn-admin-partido {
+  border: 1px solid rgba(121, 212, 245, 0.55);
+  color: var(--sky);
+}
+
+.btn-finalizar-partido {
+  border: 1px solid rgba(228, 91, 101, 0.6);
+  color: #ff9aa2;
 }
 
 .editor-partido {
@@ -286,6 +301,13 @@ a {
   border: 1px solid rgba(121, 212, 245, 0.42);
   border-radius: 17px;
   background: rgba(7, 16, 20, 0.94);
+}
+
+.editor-partido h3 {
+  margin: 0 0 12px;
+  font-family: var(--display);
+  font-size: 21px;
+  text-transform: uppercase;
 }
 
 .editor-partido-grid,
@@ -323,6 +345,42 @@ a {
   min-height: 44px;
   margin: 0;
   font-size: 14px;
+}
+
+.btn-crear-partido {
+  min-height: 46px;
+  margin-top: 12px;
+  font-size: 15px;
+}
+
+.sin-partido {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.sin-partido i {
+  margin-bottom: 6px;
+  color: var(--sky);
+  font-size: 34px;
+}
+
+.sin-partido strong {
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.sin-partido span {
+  max-width: 250px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .fixture-copy {

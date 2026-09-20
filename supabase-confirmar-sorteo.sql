@@ -23,3 +23,18 @@ with check (
       and jugadores.es_admin = true
   )
 );
+
+drop policy if exists "Admin crea partidos" on public.partidos;
+
+create policy "Admin crea partidos"
+on public.partidos
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.jugadores
+    where jugadores.email = (auth.jwt() ->> 'email')
+      and jugadores.es_admin = true
+  )
+);

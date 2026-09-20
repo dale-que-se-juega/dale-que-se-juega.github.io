@@ -63,15 +63,24 @@
   <div id="datos-partido">
     <p>Cargando partido...</p>
   </div>
-  <button
-    id="btn-editar-partido"
-    type="button"
-    class="btn-admin-partido"
-    onclick="mostrarEditorPartido()"
-    style="display:none;"
-  >
-    <i class="fa-solid fa-calendar-days"></i> CAMBIAR FECHA Y HORA
-  </button>
+  <div id="acciones-admin-partido" class="acciones-admin-partido" style="display:none;">
+    <button
+      id="btn-editar-partido"
+      type="button"
+      class="btn-admin-partido"
+      onclick="mostrarEditorPartido()"
+    >
+      <i class="fa-solid fa-calendar-days"></i> CAMBIAR FECHA Y HORA
+    </button>
+    <button
+      id="btn-finalizar-partido"
+      type="button"
+      class="btn-finalizar-partido"
+      onclick="finalizarPartido()"
+    >
+      <i class="fa-solid fa-flag-checkered"></i> FINALIZAR PARTIDO
+    </button>
+  </div>
 
   <div id="editor-partido" class="editor-partido" style="display:none;">
     <div class="editor-partido-grid">
@@ -91,7 +100,27 @@
     </div>
     <p id="estado-editor-partido" class="estado"></p>
   </div>
-      <div class="cupo-card">
+
+  <div id="creador-partido" class="editor-partido" style="display:none;">
+    <h3>Crear próximo partido</h3>
+    <div class="editor-partido-grid">
+      <label>
+        Fecha
+        <input id="nuevo-partido-fecha" type="date" class="input-field">
+      </label>
+      <label>
+        Hora
+        <input id="nuevo-partido-hora" type="time" class="input-field" value="21:00">
+      </label>
+    </div>
+    <p class="editor-ayuda">Elegí el próximo martes o viernes. El horario habitual es 21:00.</p>
+    <button type="button" class="btn-primary btn-crear-partido" onclick="crearProximoPartido()">
+      <i class="fa-solid fa-plus"></i> CREAR PARTIDO
+    </button>
+    <p id="estado-creador-partido" class="estado"></p>
+  </div>
+
+      <div id="cupo-partido" class="cupo-card">
 
   <div class="cupo-header">
     <span class="card-title">Jugadores</span>
@@ -163,6 +192,7 @@
   const SUPABASE_KEY = "sb_publishable_4J2txbexu0gyhnFvmGtDjQ_9Ic2vDN5";
 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let partidoActualId = null;
   async function registrarse() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -197,6 +227,7 @@ async function iniciarSesion() {
   }
 
   estado.textContent = "Sesión iniciada correctamente.";
+  await iniciarAplicacion();
 }
   async function cargarJugadores() {
   const { data, error } = await db
@@ -237,6 +268,7 @@ async function cargarPartidos() {
   const { data, error } = await db
     .from("partidos")
     .select("*")
+    .eq("estado", "abierto")
     .order("fecha", { ascending: true });
 
   if (error) {
@@ -247,8 +279,25 @@ async function cargarPartidos() {
   const contenedor = document.getElementById("datos-partido");
 
 if (!data || data.length === 0) {
-  contenedor.innerHTML = "<p>No hay partidos programados.</p>";
-  return;
+  partidoActualId = null;
+  contenedor.innerHTML = `
+    <div class="sin-partido">
+      <i class="fa-regular fa-calendar-xmark"></i>
+      <strong>No hay un partido abierto</strong>
+      <span>El administrador puede programar el próximo encuentro.</span>
+    </div>
+  `;
+  document.getElementById("acciones-admin-partido").style.display = "none";
+  document.getElementById("editor-partido").style.display = "none";
+  document.getElementById("cupo-partido").style.display = "none";
+  document.getElementById("btn-anotarme").style.display = "none";
+  document.getElementById("btn-bajarme").style.display = "none";
+
+  const esAdmin = await usuarioActualEsAdmin();
+  document.getElementById("creador-partido").style.display = esAdmin ? "block" : "none";
+
+  if (esAdmin) prepararFechaProximoPartido();
+  return null;
 }
 
 const partido = data[0];
@@ -276,15 +325,15 @@ contenedor.innerHTML = `
 `;
 
 await configurarEdicionPartido(partido);
+return partido;
 }
 
-let partidoActualId = 1;
-
 async function configurarEdicionPartido(partido) {
-  const btnEditar = document.getElementById("btn-editar-partido");
   const esAdmin = await usuarioActualEsAdmin();
 
-  btnEditar.style.display = esAdmin ? "block" : "none";
+  document.getElementById("acciones-admin-partido").style.display = esAdmin ? "grid" : "none";
+  document.getElementById("creador-partido").style.display = "none";
+  document.getElementById("cupo-partido").style.display = "block";
   document.getElementById("partido-fecha").value = partido.fecha;
   document.getElementById("partido-hora").value =
     partido.hora ? partido.hora.slice(0, 5) : "21:00";
@@ -292,13 +341,13 @@ async function configurarEdicionPartido(partido) {
 
 function mostrarEditorPartido() {
   document.getElementById("editor-partido").style.display = "block";
-  document.getElementById("btn-editar-partido").style.display = "none";
+  document.getElementById("acciones-admin-partido").style.display = "none";
   document.getElementById("estado-editor-partido").textContent = "";
 }
 
 function ocultarEditorPartido() {
   document.getElementById("editor-partido").style.display = "none";
-  document.getElementById("btn-editar-partido").style.display = "block";
+  document.getElementById("acciones-admin-partido").style.display = "grid";
   document.getElementById("estado-editor-partido").textContent = "";
 }
 
@@ -351,7 +400,118 @@ async function guardarCambiosPartido() {
   await cargarEquipos();
   document.getElementById("editor-partido").style.display = "none";
 }
+
+function prepararFechaProximoPartido() {
+  const fecha = new Date();
+  fecha.setHours(12, 0, 0, 0);
+
+  do {
+    fecha.setDate(fecha.getDate() + 1);
+  } while (fecha.getDay() !== 2 && fecha.getDay() !== 5);
+
+  const fechaLocal = [
+    fecha.getFullYear(),
+    String(fecha.getMonth() + 1).padStart(2, "0"),
+    String(fecha.getDate()).padStart(2, "0")
+  ].join("-");
+
+  document.getElementById("nuevo-partido-fecha").value = fechaLocal;
+  document.getElementById("nuevo-partido-hora").value = "21:00";
+}
+
+async function crearProximoPartido() {
+  const fecha = document.getElementById("nuevo-partido-fecha").value;
+  const hora = document.getElementById("nuevo-partido-hora").value;
+  const estadoCreador = document.getElementById("estado-creador-partido");
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoCreador.textContent = "Solo el administrador puede crear partidos.";
+    return;
+  }
+
+  if (!fecha || !hora) {
+    estadoCreador.textContent = "Elegí una fecha y una hora.";
+    return;
+  }
+
+  const fechaElegida = new Date(`${fecha}T12:00:00`);
+  const numeroDia = fechaElegida.getDay();
+
+  if (numeroDia !== 2 && numeroDia !== 5) {
+    estadoCreador.textContent = "El partido debe ser un martes o un viernes.";
+    return;
+  }
+
+  const dia = numeroDia === 2 ? "martes" : "viernes";
+  estadoCreador.textContent = "Creando partido...";
+
+  const { data: nuevoPartido, error } = await db
+    .from("partidos")
+    .insert({
+      dia,
+      fecha,
+      hora,
+      estado: "abierto",
+      sorteo_confirmado: false
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error || !nuevoPartido) {
+    estadoCreador.textContent = "No se pudo crear el partido.";
+    return;
+  }
+
+  partidoActualId = nuevoPartido.id;
+  estadoCreador.textContent = "Partido creado correctamente.";
+  await refrescarPartidoActual();
+}
+
+async function finalizarPartido() {
+  if (!partidoActualId || !(await usuarioActualEsAdmin())) return;
+
+  const confirmar = window.confirm(
+    "¿Querés finalizar este partido? Los inscriptos y equipos quedarán guardados en el historial."
+  );
+
+  if (!confirmar) return;
+
+  const { data: partidoFinalizado, error } = await db
+    .from("partidos")
+    .update({ estado: "finalizado" })
+    .eq("id", partidoActualId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !partidoFinalizado) {
+    document.getElementById("estado-inscripcion").textContent =
+      "No se pudo finalizar el partido.";
+    return;
+  }
+
+  partidoActualId = null;
+  document.getElementById("estado-inscripcion").textContent = "";
+  await refrescarPartidoActual();
+}
+
+async function refrescarPartidoActual() {
+  await cargarPartidos();
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
   async function cargarInscriptos() {
+  const contenedor = document.getElementById("lista-inscriptos");
+
+  if (!partidoActualId) {
+    contenedor.innerHTML = "<p class='estado'>No hay un partido abierto.</p>";
+    document.getElementById("cupo-numero").textContent = "0 / 14";
+    document.getElementById("barra-cupo").style.width = "0%";
+    document.getElementById("lugares-disponibles").textContent = "Esperando el próximo partido";
+    return;
+  }
+
   const { data, error } = await db
     .from("inscripciones")
     .select(`
@@ -361,9 +521,7 @@ async function guardarCambiosPartido() {
         alias
       )
     `)
-    .eq("partido_id", 1);
-
-  const contenedor = document.getElementById("lista-inscriptos");
+    .eq("partido_id", partidoActualId);
 
   if (error) {
     contenedor.innerHTML = "<p>Error al cargar inscriptos.</p>";
@@ -460,6 +618,11 @@ contenedor.innerHTML = `
   async function anotarme() {
   const estado = document.getElementById("estado-inscripcion");
 
+if (!partidoActualId) {
+  estado.textContent = "No hay un partido abierto.";
+  return;
+}
+
 const { data: { user } } = await db.auth.getUser();
 
 if (!user) {
@@ -481,7 +644,7 @@ if (errorJugador || !jugador) {
 const { data: inscripcionExistente } = await db
   .from("inscripciones")
   .select("id")
-  .eq("partido_id", 1)
+  .eq("partido_id", partidoActualId)
   .eq("jugador_id", jugador.id)
   .maybeSingle();
 
@@ -493,7 +656,7 @@ if (inscripcionExistente) {
 const { count, error: errorCupo } = await db
   .from("inscripciones")
   .select("*", { count: "exact", head: true })
-  .eq("partido_id", 1)
+  .eq("partido_id", partidoActualId)
   .eq("estado", "titular");
 
 if (errorCupo) {
@@ -506,7 +669,7 @@ const nuevoEstado = count < 14 ? "titular" : "suplente";
 const { error } = await db
   .from("inscripciones")
   .insert({
-    partido_id: 1,
+    partido_id: partidoActualId,
     jugador_id: jugador.id,
     estado: nuevoEstado
   });
@@ -523,6 +686,11 @@ await cargarInscriptos();
 }
   async function bajarme() {
   const estado = document.getElementById("estado-inscripcion");
+
+  if (!partidoActualId) {
+    estado.textContent = "No hay un partido abierto.";
+    return;
+  }
 
   const { data: { user } } = await db.auth.getUser();
 
@@ -545,7 +713,7 @@ await cargarInscriptos();
   const { error } = await db
     .from("inscripciones")
     .delete()
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("jugador_id", jugador.id);
 
   if (error) {
@@ -562,6 +730,12 @@ await cargarInscriptos();
   async function actualizarBotonesInscripcion() {
   const btnAnotarme = document.getElementById("btn-anotarme");
   const btnBajarme = document.getElementById("btn-bajarme");
+
+  if (!partidoActualId) {
+    btnAnotarme.style.display = "none";
+    btnBajarme.style.display = "none";
+    return;
+  }
 
   const { data: { user } } = await db.auth.getUser();
 
@@ -586,7 +760,7 @@ await cargarInscriptos();
   const { data: inscripciones } = await db
     .from("inscripciones")
     .select("id")
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("jugador_id", jugador.id)
     .limit(1);
 
@@ -599,12 +773,18 @@ await cargarInscriptos();
   const btnSortear = document.getElementById("btn-sortear");
   const estadoSorteo = document.getElementById("estado-sorteo");
 
+  if (!partidoActualId) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent = "El sorteo estará disponible cuando se cree el próximo partido.";
+    return;
+  }
+
   const { data: { user } } = await db.auth.getUser();
 
   const { count } = await db
     .from("inscripciones")
     .select("*", { count: "exact", head: true })
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("estado", "titular");
 
   const cantidad = count || 0;
@@ -657,10 +837,15 @@ async function usuarioActualEsAdmin() {
 async function cargarEquipos() {
   const resultado = document.getElementById("equipos-resultado");
 
+  if (!partidoActualId) {
+    resultado.innerHTML = "";
+    return;
+  }
+
   const { data: partido, error: errorPartido } = await db
     .from("partidos")
     .select("sorteo_confirmado")
-    .eq("id", 1)
+    .eq("id", partidoActualId)
     .maybeSingle();
 
   if (errorPartido) {
@@ -679,7 +864,7 @@ async function cargarEquipos() {
         alias
       )
     `)
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("estado", "titular");
 
   if (error) {
@@ -813,7 +998,7 @@ async function intercambiarJugadores() {
   const { error: errorRevision } = await db
     .from("partidos")
     .update({ sorteo_confirmado: false })
-    .eq("id", 1);
+    .eq("id", partidoActualId);
 
   if (errorRevision) {
     estadoSorteo.textContent = "No se pudo abrir el sorteo para hacer cambios.";
@@ -872,7 +1057,7 @@ async function confirmarEquipos() {
   const { data: equipos, error } = await db
     .from("inscripciones")
     .select("equipo")
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("estado", "titular");
 
   if (error) {
@@ -894,7 +1079,7 @@ async function confirmarEquipos() {
   const { data: partidoActualizado, error: errorConfirmacion } = await db
     .from("partidos")
     .update({ sorteo_confirmado: true })
-    .eq("id", 1)
+    .eq("id", partidoActualId)
     .select("id")
     .maybeSingle();
 
@@ -911,10 +1096,15 @@ async function confirmarEquipos() {
 async function sortearEquipos() {
   const estadoSorteo = document.getElementById("estado-sorteo");
 
+  if (!partidoActualId) {
+    estadoSorteo.textContent = "No hay un partido abierto.";
+    return;
+  }
+
   const { data: titulares, error } = await db
     .from("inscripciones")
     .select("id")
-    .eq("partido_id", 1)
+    .eq("partido_id", partidoActualId)
     .eq("estado", "titular");
 
   if (error) {
@@ -931,7 +1121,7 @@ async function sortearEquipos() {
   const { error: errorRevision } = await db
     .from("partidos")
     .update({ sorteo_confirmado: false })
-    .eq("id", 1);
+    .eq("id", partidoActualId);
 
   if (errorRevision) {
     estadoSorteo.textContent = "No se pudo iniciar la revisión del sorteo.";
@@ -968,12 +1158,16 @@ async function sortearEquipos() {
   await cargarInscriptos();
   await cargarEquipos();
 }
-cargarJugadores();
-  cargarPartidos();
-  cargarInscriptos();
-  actualizarBotonesInscripcion();
-  configurarSorteo();
-cargarEquipos();
+async function iniciarAplicacion() {
+  await cargarJugadores();
+  await cargarPartidos();
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+iniciarAplicacion();
   
 </script>
 </body>
