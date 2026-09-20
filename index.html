@@ -5,51 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Fulbo Manager</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f4f6f5;
-      color: #1f2937;
-    }
-
-    header {
-      background: linear-gradient(135deg, #064e3b, #15803d);
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 36px;
-    }
-
-    header p {
-      margin-top: 8px;
-      opacity: 0.9;
-    }
-
-    main {
-      max-width: 850px;
-      margin: 30px auto;
-      padding: 20px;
-    }
-  </style>
+  <meta name="theme-color" content="#091115">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <header class="logo">
-    <h1>⚽ Fulbo Manager</h1>
-    <p>Organizá tus partidos. Armá tus equipos. Jugá.</p>
+  <header class="topbar">
+    <button class="icon-button" type="button" aria-label="Abrir menú">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="brand" aria-label="Fulbo Manager">
+      <div class="brand-main">FULB<i class="fa-regular fa-futbol"></i></div>
+      <div class="brand-sub">MANAGER</div>
+    </div>
+    <div class="profile-mark" aria-label="Perfil">
+      <i class="fa-solid fa-user"></i>
+      <span></span>
+    </div>
   </header>
+  <p class="brand-claim">FÚTBOL ENTRE AMIGOS</p>
 
   <main class="app">
-    <section id="acceso" class="card">
-  <h2 class="section-title">Ingresar</h2>
+    <section id="acceso" class="card auth-card">
+  <h2 class="section-title"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar</h2>
 
   <input
     type="email"
@@ -65,18 +49,17 @@
     placeholder="Tu contraseña"
   >
 
-<button class="btn-secondary" onclick="registrarse()">Registrarme</button>
-<button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
+<div class="auth-actions">
+  <button class="btn-secondary" onclick="registrarse()">Registrarme</button>
+  <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
+</div>
 
   <p id="estado-auth"></p>
 </section>
-    <section id="proximo-partido" class="card">
+    <section id="proximo-partido" class="card match-card">
 
-  <p class="card-title">⚽ Próximo partido</p>
+  <p class="card-title"><span></span> Próximo partido</p>
 
-  <h2 class="partido-fecha">
-    Próximo partido
-  </h2>
   <div id="datos-partido">
     <p>Cargando partido...</p>
   </div>
@@ -100,12 +83,15 @@
   </p>
 
 </div>
-  <button id="btn-anotarme" class="btn-primary" onclick="anotarme()">⚽ ANOTARME</button>
+  <button id="btn-anotarme" class="btn-primary signup-button" onclick="anotarme()"><i class="fa-regular fa-futbol"></i> ANOTARME</button>
 <button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
 </section>
     <section id="inscriptos" class="card">
-  <h2 class="section-title">Inscriptos</h2>
+  <div class="section-heading">
+    <h2 class="section-title"><i class="fa-solid fa-user-group"></i> Inscriptos</h2>
+    <a href="#jugadores">Ver todos <i class="fa-solid fa-chevron-right"></i></a>
+  </div>
       <p id="contador-inscriptos"></p>
   <div id="lista-inscriptos">
     <p>Cargando inscriptos...</p>
@@ -113,7 +99,9 @@
   
 </section>
     <section id="sorteo" class="card">
-  <h2 class="section-title">🎲 Sorteo de equipos</h2>
+  <div class="sorteo-icon"><i class="fa-solid fa-shuffle"></i></div>
+  <div class="sorteo-copy">
+  <h2 class="section-title">Sorteo de equipos</h2>
 
   <p id="estado-sorteo" class="estado">
     El sorteo se habilita cuando haya 14 titulares.
@@ -125,15 +113,23 @@
     onclick="sortearEquipos()"
     style="display:none;"
   >
-    🎲 SORTEAR EQUIPOS
+    <i class="fa-solid fa-dice"></i> SORTEAR EQUIPOS
   </button>
 
   <div id="equipos-resultado"></div>
+  </div>
 </section>
-    <h2>Jugadores</h2>
-    <p>Administrá los jugadores de tu grupo de fútbol.</p>
-    <div id="lista-jugadores"></div>
+    <section id="jugadores" class="card players-card">
+      <h2 class="section-title">Jugadores</h2>
+      <p class="section-description">Administrá los jugadores de tu grupo de fútbol.</p>
+      <div id="lista-jugadores"></div>
+    </section>
   </main>
+  <footer class="app-footer">
+    <span>BUEN FÚTBOL</span>
+    <strong>MEJORES AMIGOS</strong>
+    <i></i>
+  </footer>
 <script>
   const SUPABASE_URL = "https://xwdslmdvgicenqqbrqev.supabase.co";
   const SUPABASE_KEY = "sb_publishable_4J2txbexu0gyhnFvmGtDjQ_9Ic2vDN5";
@@ -228,12 +224,26 @@ if (!data || data.length === 0) {
 }
 
 const partido = data[0];
+const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
+const fechaFormateada = fechaPartido
+  .toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  })
+  .toUpperCase();
+const horaFormateada = partido.hora ? partido.hora.slice(0, 5) : "21:00";
 
 contenedor.innerHTML = `
-  <p><strong>${partido.dia}</strong></p>
-  <p>📅 ${partido.fecha}</p>
-  <p>⏰ ${partido.hora}</p>
-  <p>Estado: ${partido.estado}</p>
+  <div class="fixture-copy">
+    <strong>${partido.dia}</strong>
+    <span>${fechaFormateada}</span>
+  </div>
+  <div class="fixture-meta">
+    <span><i class="fa-regular fa-clock"></i> ${horaFormateada} HS</span>
+    <span><i class="fa-solid fa-location-dot"></i> Cancha habitual</span>
+  </div>
+  <span class="match-status">${partido.estado}</span>
 `;
 }
   async function cargarInscriptos() {
@@ -553,7 +563,7 @@ async function cargarEquipos() {
   resultado.innerHTML = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
       <div>
-        <h3>🟢 Equipo A</h3>
+        <h3><span class="team-dot team-a"></span> Equipo A</h3>
         <ol>
           ${equipoA.map(inscripcion =>
             `<li>${inscripcion.jugadores.alias}</li>`
@@ -562,7 +572,7 @@ async function cargarEquipos() {
       </div>
 
       <div>
-        <h3>⚫ Equipo B</h3>
+        <h3><span class="team-dot team-b"></span> Equipo B</h3>
         <ol>
           ${equipoB.map(inscripcion =>
             `<li>${inscripcion.jugadores.alias}</li>`
@@ -631,4 +641,3 @@ cargarEquipos();
 </script>
 </body>
 </html>
-
