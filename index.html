@@ -533,12 +533,29 @@ await cargarInscriptos();
   }
 }
 
+let seleccionIntercambio = { A: null, B: null };
+
+async function usuarioActualEsAdmin() {
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) return false;
+
+  const { data: jugador } = await db
+    .from("jugadores")
+    .select("es_admin")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  return jugador && jugador.es_admin === true;
+}
+
 async function cargarEquipos() {
   const resultado = document.getElementById("equipos-resultado");
 
   const { data, error } = await db
     .from("inscripciones")
     .select(`
+      id,
       equipo,
       jugadores (
         alias
@@ -552,6 +569,7 @@ async function cargarEquipos() {
     return;
   }
 
+  const esAdmin = await usuarioActualEsAdmin();
   const equipoA = data.filter(inscripcion => inscripcion.equipo === "A");
   const equipoB = data.filter(inscripcion => inscripcion.equipo === "B");
 
@@ -560,27 +578,133 @@ async function cargarEquipos() {
     return;
   }
 
+  const botonSeleccion = (inscripcion, equipo) => esAdmin
+    ? `<button
+         type="button"
+         class="btn-seleccionar-jugador"
+         data-id="${inscripcion.id}"
+         data-equipo="${equipo}"
+         onclick="seleccionarJugadorParaCambio(this)"
+         aria-label="Seleccionar a ${inscripcion.jugadores.alias} del Equipo ${equipo}"
+       ><i class="fa-solid fa-arrow-right-arrow-left"></i></button>`
+    : "";
+
   resultado.innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
-      <div>
+    <div class="equipos-grid">
+      <div class="equipo-card">
         <h3><span class="team-dot team-a"></span> Equipo A</h3>
         <ol>
           ${equipoA.map(inscripcion =>
-            `<li>${inscripcion.jugadores.alias}</li>`
+            `<li><span>${inscripcion.jugadores.alias}</span>${botonSeleccion(inscripcion, "A")}</li>`
           ).join("")}
         </ol>
       </div>
 
-      <div>
+      <div class="equipo-card">
         <h3><span class="team-dot team-b"></span> Equipo B</h3>
         <ol>
           ${equipoB.map(inscripcion =>
-            `<li>${inscripcion.jugadores.alias}</li>`
+            `<li><span>${inscripcion.jugadores.alias}</span>${botonSeleccion(inscripcion, "B")}</li>`
           ).join("")}
         </ol>
       </div>
+
+      ${esAdmin ? `
+        <div class="intercambio-panel">
+          <p>Elegí un jugador de cada equipo para intercambiarlos.</p>
+          <button
+            id="btn-intercambiar"
+            type="button"
+            class="btn-secondary"
+            onclick="intercambiarJugadores()"
+            disabled
+          >
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            INTERCAMBIAR JUGADORES
+          </button>
+        </div>
+      ` : ""}
     </div>
   `;
+
+  seleccionIntercambio = { A: null, B: null };
+}
+
+function seleccionarJugadorParaCambio(boton) {
+  const equipo = boton.dataset.equipo;
+  const id = boton.dataset.id;
+
+  seleccionIntercambio[equipo] =
+    seleccionIntercambio[equipo] === id ? null : id;
+
+  document
+    .querySelectorAll(`.btn-seleccionar-jugador[data-equipo="${equipo}"]`)
+    .forEach(opcion => {
+      opcion.classList.toggle(
+        "seleccionado",
+        opcion.dataset.id === seleccionIntercambio[equipo]
+      );
+    });
+
+  const btnIntercambiar = document.getElementById("btn-intercambiar");
+  btnIntercambiar.disabled =
+    !seleccionIntercambio.A || !seleccionIntercambio.B;
+}
+
+async function intercambiarJugadores() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+  const btnIntercambiar = document.getElementById("btn-intercambiar");
+
+  if (!seleccionIntercambio.A || !seleccionIntercambio.B) {
+    estadoSorteo.textContent = "Elegí un jugador de cada equipo.";
+    return;
+  }
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede modificar los equipos.";
+    return;
+  }
+
+  btnIntercambiar.disabled = true;
+  estadoSorteo.textContent = "Intercambiando jugadores...";
+
+  const { data: cambioA, error: errorA } = await db
+    .from("inscripciones")
+    .update({ equipo: "B" })
+    .eq("id", seleccionIntercambio.A)
+    .eq("equipo", "A")
+    .select("id")
+    .maybeSingle();
+
+  if (errorA || !cambioA) {
+    estadoSorteo.textContent = "No se pudo cambiar el jugador del Equipo A.";
+    btnIntercambiar.disabled = false;
+    return;
+  }
+
+  const { data: cambioB, error: errorB } = await db
+    .from("inscripciones")
+    .update({ equipo: "A" })
+    .eq("id", seleccionIntercambio.B)
+    .eq("equipo", "B")
+    .select("id")
+    .maybeSingle();
+
+  if (errorB || !cambioB) {
+    await db
+      .from("inscripciones")
+      .update({ equipo: "A" })
+      .eq("id", seleccionIntercambio.A);
+
+    estadoSorteo.textContent = "No se pudo completar el intercambio.";
+    btnIntercambiar.disabled = false;
+    return;
+  }
+
+  seleccionIntercambio = { A: null, B: null };
+  estadoSorteo.textContent = "Jugadores intercambiados correctamente.";
+  await cargarEquipos();
+  await cargarInscriptos();
 }
 
 async function sortearEquipos() {
@@ -628,8 +752,9 @@ async function sortearEquipos() {
   }
 
   estadoSorteo.textContent = "¡Equipos sorteados correctamente!";
-  cargarInscriptos();
-  cargarEquipos();
+  seleccionIntercambio = { A: null, B: null };
+  await cargarInscriptos();
+  await cargarEquipos();
 }
 cargarJugadores();
   cargarPartidos();
