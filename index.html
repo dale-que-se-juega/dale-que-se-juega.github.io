@@ -112,6 +112,24 @@
   </div>
   
 </section>
+    <section id="sorteo" class="card">
+  <h2 class="section-title">🎲 Sorteo de equipos</h2>
+
+  <p id="estado-sorteo" class="estado">
+    El sorteo se habilita cuando haya 14 titulares.
+  </p>
+
+  <button
+    id="btn-sortear"
+    class="btn-primary"
+    onclick="sortearEquipos()"
+    style="display:none;"
+  >
+    🎲 SORTEAR EQUIPOS
+  </button>
+
+  <div id="equipos-resultado"></div>
+</section>
     <h2>Jugadores</h2>
     <p>Administrá los jugadores de tu grupo de fútbol.</p>
     <div id="lista-jugadores"></div>
@@ -460,10 +478,154 @@ cargarInscriptos();
   btnAnotarme.style.display = estaAnotado ? "none" : "block";
   btnBajarme.style.display = estaAnotado ? "block" : "none";
 }
+  async function configurarSorteo() {
+  const btnSortear = document.getElementById("btn-sortear");
+  const estadoSorteo = document.getElementById("estado-sorteo");
+
+  const { data: { user } } = await db.auth.getUser();
+
+  const { count } = await db
+    .from("inscripciones")
+    .select("*", { count: "exact", head: true })
+    .eq("partido_id", 1)
+    .eq("estado", "titular");
+
+  const cantidad = count || 0;
+
+  if (!user) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent =
+      `El sorteo se habilita con 14 titulares. Actualmente hay ${cantidad}.`;
+    return;
+  }
+
+  const { data: jugador } = await db
+    .from("jugadores")
+    .select("es_admin")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  const esAdmin = jugador && jugador.es_admin === true;
+
+  btnSortear.style.display = esAdmin ? "block" : "none";
+  btnSortear.disabled = cantidad !== 14;
+  btnSortear.style.opacity = cantidad === 14 ? "1" : "0.5";
+
+  if (cantidad === 14) {
+    estadoSorteo.textContent = esAdmin
+      ? "Los 14 titulares están confirmados. Ya podés realizar el sorteo."
+      : "Los 14 titulares están confirmados. Esperando el sorteo.";
+  } else {
+    estadoSorteo.textContent =
+      `Faltan ${14 - cantidad} titulares para habilitar el sorteo.`;
+  }
+}
+
+async function cargarEquipos() {
+  const resultado = document.getElementById("equipos-resultado");
+
+  const { data, error } = await db
+    .from("inscripciones")
+    .select(`
+      equipo,
+      jugadores (
+        alias
+      )
+    `)
+    .eq("partido_id", 1)
+    .eq("estado", "titular");
+
+  if (error) {
+    resultado.innerHTML = "<p>Error al cargar los equipos.</p>";
+    return;
+  }
+
+  const equipoA = data.filter(inscripcion => inscripcion.equipo === "A");
+  const equipoB = data.filter(inscripcion => inscripcion.equipo === "B");
+
+  if (equipoA.length === 0 && equipoB.length === 0) {
+    resultado.innerHTML = "";
+    return;
+  }
+
+  resultado.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+      <div>
+        <h3>🟢 Equipo A</h3>
+        <ol>
+          ${equipoA.map(inscripcion =>
+            `<li>${inscripcion.jugadores.alias}</li>`
+          ).join("")}
+        </ol>
+      </div>
+
+      <div>
+        <h3>⚫ Equipo B</h3>
+        <ol>
+          ${equipoB.map(inscripcion =>
+            `<li>${inscripcion.jugadores.alias}</li>`
+          ).join("")}
+        </ol>
+      </div>
+    </div>
+  `;
+}
+
+async function sortearEquipos() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+
+  const { data: titulares, error } = await db
+    .from("inscripciones")
+    .select("id")
+    .eq("partido_id", 1)
+    .eq("estado", "titular");
+
+  if (error) {
+    estadoSorteo.textContent = "Error al obtener los titulares.";
+    return;
+  }
+
+  if (!titulares || titulares.length !== 14) {
+    estadoSorteo.textContent =
+      "El sorteo necesita exactamente 14 titulares.";
+    return;
+  }
+
+  const mezclados = [...titulares];
+
+  for (let i = mezclados.length - 1; i > 0; i--) {
+    const posicion = Math.floor(Math.random() * (i + 1));
+    [mezclados[i], mezclados[posicion]] =
+      [mezclados[posicion], mezclados[i]];
+  }
+
+  const resultados = await Promise.all(
+    mezclados.map((inscripcion, indice) =>
+      db
+        .from("inscripciones")
+        .update({ equipo: indice < 7 ? "A" : "B" })
+        .eq("id", inscripcion.id)
+    )
+  );
+
+  const huboError = resultados.some(resultado => resultado.error);
+
+  if (huboError) {
+    estadoSorteo.textContent = "No se pudo completar el sorteo.";
+    return;
+  }
+
+  estadoSorteo.textContent = "¡Equipos sorteados correctamente!";
+  cargarInscriptos();
+  cargarEquipos();
+}
 cargarJugadores();
   cargarPartidos();
   cargarInscriptos();
   actualizarBotonesInscripcion();
+  configurarSorteo();
+cargarEquipos();
+  
 </script>
 </body>
 </html>
