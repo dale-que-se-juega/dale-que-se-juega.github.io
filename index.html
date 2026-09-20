@@ -63,6 +63,34 @@
   <div id="datos-partido">
     <p>Cargando partido...</p>
   </div>
+  <button
+    id="btn-editar-partido"
+    type="button"
+    class="btn-admin-partido"
+    onclick="mostrarEditorPartido()"
+    style="display:none;"
+  >
+    <i class="fa-solid fa-calendar-days"></i> CAMBIAR FECHA Y HORA
+  </button>
+
+  <div id="editor-partido" class="editor-partido" style="display:none;">
+    <div class="editor-partido-grid">
+      <label>
+        Fecha
+        <input id="partido-fecha" type="date" class="input-field">
+      </label>
+      <label>
+        Hora
+        <input id="partido-hora" type="time" class="input-field" value="21:00">
+      </label>
+    </div>
+    <p class="editor-ayuda">Los partidos habituales son martes y viernes a las 21:00.</p>
+    <div class="editor-partido-acciones">
+      <button type="button" class="btn-secondary" onclick="ocultarEditorPartido()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="guardarCambiosPartido()">Guardar cambios</button>
+    </div>
+    <p id="estado-editor-partido" class="estado"></p>
+  </div>
       <div class="cupo-card">
 
   <div class="cupo-header">
@@ -224,6 +252,7 @@ if (!data || data.length === 0) {
 }
 
 const partido = data[0];
+partidoActualId = partido.id;
 const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
 const fechaFormateada = fechaPartido
   .toLocaleDateString("es-AR", {
@@ -245,6 +274,82 @@ contenedor.innerHTML = `
   </div>
   <span class="match-status">${partido.estado}</span>
 `;
+
+await configurarEdicionPartido(partido);
+}
+
+let partidoActualId = 1;
+
+async function configurarEdicionPartido(partido) {
+  const btnEditar = document.getElementById("btn-editar-partido");
+  const esAdmin = await usuarioActualEsAdmin();
+
+  btnEditar.style.display = esAdmin ? "block" : "none";
+  document.getElementById("partido-fecha").value = partido.fecha;
+  document.getElementById("partido-hora").value =
+    partido.hora ? partido.hora.slice(0, 5) : "21:00";
+}
+
+function mostrarEditorPartido() {
+  document.getElementById("editor-partido").style.display = "block";
+  document.getElementById("btn-editar-partido").style.display = "none";
+  document.getElementById("estado-editor-partido").textContent = "";
+}
+
+function ocultarEditorPartido() {
+  document.getElementById("editor-partido").style.display = "none";
+  document.getElementById("btn-editar-partido").style.display = "block";
+  document.getElementById("estado-editor-partido").textContent = "";
+}
+
+async function guardarCambiosPartido() {
+  const fecha = document.getElementById("partido-fecha").value;
+  const hora = document.getElementById("partido-hora").value;
+  const estadoEditor = document.getElementById("estado-editor-partido");
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoEditor.textContent = "Solo el administrador puede modificar el partido.";
+    return;
+  }
+
+  if (!fecha || !hora) {
+    estadoEditor.textContent = "Elegí una fecha y una hora.";
+    return;
+  }
+
+  const fechaElegida = new Date(`${fecha}T12:00:00`);
+  const numeroDia = fechaElegida.getDay();
+
+  if (numeroDia !== 2 && numeroDia !== 5) {
+    estadoEditor.textContent = "La fecha debe ser un martes o un viernes.";
+    return;
+  }
+
+  const dia = numeroDia === 2 ? "martes" : "viernes";
+  estadoEditor.textContent = "Guardando cambios...";
+
+  const { data: partidoActualizado, error } = await db
+    .from("partidos")
+    .update({
+      fecha,
+      hora,
+      dia,
+      sorteo_confirmado: false
+    })
+    .eq("id", partidoActualId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !partidoActualizado) {
+    estadoEditor.textContent = "No se pudo actualizar la fecha y hora.";
+    return;
+  }
+
+  estadoEditor.textContent = "Fecha y hora actualizadas correctamente.";
+  await cargarPartidos();
+  await configurarSorteo();
+  await cargarEquipos();
+  document.getElementById("editor-partido").style.display = "none";
 }
   async function cargarInscriptos() {
   const { data, error } = await db

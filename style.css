@@ -262,6 +262,69 @@ a {
   z-index: 1;
 }
 
+.btn-admin-partido {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 42px;
+  margin: -5px 0 12px;
+  border: 1px solid rgba(121, 212, 245, 0.55);
+  border-radius: 13px;
+  background: rgba(7, 16, 20, 0.84);
+  color: var(--sky);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.editor-partido {
+  position: relative;
+  z-index: 2;
+  margin: -5px 0 14px;
+  padding: 14px;
+  border: 1px solid rgba(121, 212, 245, 0.42);
+  border-radius: 17px;
+  background: rgba(7, 16, 20, 0.94);
+}
+
+.editor-partido-grid,
+.editor-partido-acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.editor-partido label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.editor-partido .input-field {
+  margin-top: 6px;
+  color-scheme: dark;
+}
+
+.editor-ayuda {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.editor-partido-acciones {
+  margin-top: 10px;
+}
+
+.editor-partido-acciones .btn-primary,
+.editor-partido-acciones .btn-secondary {
+  min-height: 44px;
+  margin: 0;
+  font-size: 14px;
+}
+
 .fixture-copy {
   max-width: 82%;
   padding-top: 4px;
