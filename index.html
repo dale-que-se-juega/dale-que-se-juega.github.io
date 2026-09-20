@@ -402,8 +402,9 @@ if (error) {
 }
 
 estado.textContent = "Te anotaste correctamente.";
-cargarInscriptos();
-    actualizarBotonesInscripcion();
+await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
 }
   async function bajarme() {
   const estado = document.getElementById("estado-inscripcion");
@@ -439,8 +440,9 @@ cargarInscriptos();
   }
 
   estado.textContent = "Te bajaste del partido correctamente.";
-  cargarInscriptos();
-    actualizarBotonesInscripcion();
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
 }
   async function actualizarBotonesInscripcion() {
   const btnAnotarme = document.getElementById("btn-anotarme");
