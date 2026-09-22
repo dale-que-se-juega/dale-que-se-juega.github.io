@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-invitados">
+  <link rel="stylesheet" href="style.css?v=20260922-fotos">
 </head>
 
 <body>
@@ -54,7 +54,24 @@
   <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
 </div>
 
+  <p class="auth-ayuda-foto">Después de confirmar tu email, podés agregar tu foto al perfil.</p>
+
   <p id="estado-auth"></p>
+  <div id="perfil-foto" class="perfil-foto" hidden>
+    <div class="perfil-foto-cabecera">
+      <div id="perfil-avatar" class="avatar avatar-perfil">J</div>
+      <div>
+        <h3>Mi foto</h3>
+        <p>Opcional. Se mostrará junto a tu nombre en los partidos.</p>
+      </div>
+    </div>
+    <div class="perfil-foto-acciones">
+      <label for="archivo-foto" class="selector-foto">ELEGIR FOTO</label>
+      <input id="archivo-foto" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Elegir foto de perfil" onchange="mostrarFotoSeleccionada()">
+      <button id="btn-guardar-foto" type="button" onclick="guardarFotoPerfil()">GUARDAR FOTO</button>
+    </div>
+    <p id="estado-foto" class="estado" role="status"></p>
+  </div>
 </section>
     <section id="proximo-partido" class="card match-card">
 
@@ -218,6 +235,7 @@
   }
 
   estado.textContent = "Registro realizado. Revisá tu email.";
+  if (data.session) await iniciarAplicacion();
 }
 
 async function iniciarSesion() {
@@ -238,6 +256,133 @@ async function iniciarSesion() {
   estado.textContent = "Sesión iniciada correctamente.";
   await iniciarAplicacion();
 }
+
+function fotoPublica(path) {
+  if (!path || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/.test(path)) return null;
+  return db.storage.from("jugadores-fotos").getPublicUrl(path).data.publicUrl;
+}
+
+function contenidoAvatar(jugador) {
+  const inicial = escaparHtml((jugador.alias || "J").charAt(0).toUpperCase());
+  const url = fotoPublica(jugador.foto_path);
+  return `${inicial}${url
+    ? `<img src="${escaparHtml(url)}" alt="" loading="lazy" onerror="this.remove()">`
+    : ""}`;
+}
+
+function mostrarFotoSeleccionada() {
+  const archivo = document.getElementById("archivo-foto").files?.[0];
+  document.getElementById("estado-foto").textContent = archivo
+    ? `Foto elegida: ${archivo.name}` : "Elegí una foto para tu perfil.";
+}
+
+async function actualizarPerfilFoto() {
+  const control = document.getElementById("perfil-foto");
+  const estado = document.getElementById("estado-foto");
+  const { data: { user } } = await db.auth.getUser();
+  control.hidden = !user;
+  if (!user) return;
+
+  const { data: jugador, error } = await db.from("jugadores")
+    .select("id, alias, foto_path")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  const boton = document.getElementById("btn-guardar-foto");
+  boton.disabled = !!error || !jugador;
+  if (error || !jugador) {
+    estado.textContent = "Tu cuenta aún no figura como jugador. Pedile al administrador que te agregue al grupo.";
+    return;
+  }
+
+  document.getElementById("perfil-avatar").innerHTML = contenidoAvatar(jugador);
+  estado.textContent = jugador.foto_path ? "Podés cambiar tu foto cuando quieras." : "Elegí una foto para tu perfil.";
+}
+
+async function comprimirFoto(archivo) {
+  const url = URL.createObjectURL(archivo);
+  try {
+    const imagen = new Image();
+    await new Promise((resolver, rechazar) => {
+      imagen.onload = resolver;
+      imagen.onerror = () => rechazar(new Error("No se pudo abrir la imagen"));
+      imagen.src = url;
+    });
+
+    const escala = Math.min(1, 640 / Math.max(imagen.width, imagen.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(imagen.width * escala));
+    canvas.height = Math.max(1, Math.round(imagen.height * escala));
+    canvas.getContext("2d").drawImage(imagen, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolver, rechazar) => canvas.toBlob(
+      blob => blob ? resolver(blob) : rechazar(new Error("No se pudo procesar la foto")),
+      "image/jpeg", 0.82
+    ));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function guardarFotoPerfil() {
+  const estado = document.getElementById("estado-foto");
+  const input = document.getElementById("archivo-foto");
+  const boton = document.getElementById("btn-guardar-foto");
+  const archivo = input.files?.[0];
+
+  if (!archivo) {
+    estado.textContent = "Elegí una foto primero.";
+    return;
+  }
+  if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size > 8 * 1024 * 1024) {
+    estado.textContent = "Elegí una imagen JPG, PNG o WebP de hasta 8 MB.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  const { data: jugador, error: errorJugador } = await db.from("jugadores")
+    .select("foto_path").eq("email", user.email).maybeSingle();
+  if (errorJugador || !jugador) {
+    estado.textContent = "Tu cuenta aún no figura como jugador del grupo.";
+    return;
+  }
+
+  boton.disabled = true;
+  estado.textContent = "Guardando foto...";
+  try {
+    const miniatura = await comprimirFoto(archivo);
+    const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+    const { error: errorSubida } = await db.storage.from("jugadores-fotos")
+      .upload(path, miniatura, { contentType: "image/jpeg", upsert: false });
+    if (errorSubida) throw errorSubida;
+
+    const { error: errorGuardado } = await db.rpc("guardar_foto_perfil", { nueva_foto_path: path });
+    if (errorGuardado) {
+      await db.storage.from("jugadores-fotos").remove([path]);
+      throw errorGuardado;
+    }
+
+    if (jugador.foto_path?.startsWith(`${user.id}/`)) {
+      await db.storage.from("jugadores-fotos").remove([jugador.foto_path]);
+    }
+    input.value = "";
+    await cargarJugadores();
+    await cargarInscriptos();
+    await cargarEquipos();
+    await actualizarPerfilFoto();
+    estado.textContent = "Foto de perfil actualizada.";
+  } catch (error) {
+    estado.textContent = "No se pudo guardar la foto. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
   async function cargarJugadores() {
   const { data, error } = await db
     .from("jugadores")
@@ -255,13 +400,13 @@ async function iniciarSesion() {
   <div class="jugador">
 
     <div class="avatar">
-      ${jugador.alias.charAt(0).toUpperCase()}
+      ${contenidoAvatar(jugador)}
     </div>
 
     <div class="jugador-info">
 
       <div class="jugador-nombre">
-        ${jugador.alias}
+        ${escaparHtml(jugador.alias)}
       </div>
 
       <div class="jugador-estado">
@@ -524,7 +669,7 @@ async function obtenerParticipantes() {
 
   const [jugadores, invitados] = await Promise.all([
     db.from("inscripciones")
-      .select("id, estado, equipo, jugadores(alias)")
+      .select("id, estado, equipo, jugadores(alias, foto_path)")
       .eq("partido_id", partidoActualId),
     db.from("invitados")
       .select("id, alias, estado, equipo, agregado_por")
@@ -538,7 +683,10 @@ async function obtenerParticipantes() {
   return {
     data: [
       ...jugadores.data.map(item => ({
-        ...item, alias: item.jugadores?.alias || "Jugador", tipo: "jugador"
+        ...item,
+        alias: item.jugadores?.alias || "Jugador",
+        foto_path: item.jugadores?.foto_path || null,
+        tipo: "jugador"
       })),
       ...invitados.data.map(item => ({ ...item, tipo: "invitado" }))
     ],
@@ -679,7 +827,7 @@ contenedor.innerHTML = `
   ${titulares.map(inscripcion => `
     <div class="jugador">
       <div class="avatar">
-        ${escaparHtml(inscripcion.alias.charAt(0).toUpperCase())}
+        ${contenidoAvatar(inscripcion)}
       </div>
 
       <div class="jugador-info">
@@ -708,7 +856,7 @@ contenedor.innerHTML = `
       ? suplentes.map(inscripcion => `
           <div class="jugador">
             <div class="avatar">
-                ${escaparHtml(inscripcion.alias.charAt(0).toUpperCase())}
+                ${contenidoAvatar(inscripcion)}
             </div>
 
             <div class="jugador-info">
@@ -1017,7 +1165,7 @@ async function cargarEquipos() {
         <h3><span class="team-dot team-a"></span> Equipo A</h3>
         <ol>
           ${equipoA.map(inscripcion =>
-            `<li><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span>${botonSeleccion(inscripcion, "A")}</li>`
+            `<li><span class="equipo-integrante"><span class="avatar equipo-avatar">${contenidoAvatar(inscripcion)}</span><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span></span>${botonSeleccion(inscripcion, "A")}</li>`
           ).join("")}
         </ol>
       </div>
@@ -1026,7 +1174,7 @@ async function cargarEquipos() {
         <h3><span class="team-dot team-b"></span> Equipo B</h3>
         <ol>
           ${equipoB.map(inscripcion =>
-            `<li><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span>${botonSeleccion(inscripcion, "B")}</li>`
+            `<li><span class="equipo-integrante"><span class="avatar equipo-avatar">${contenidoAvatar(inscripcion)}</span><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span></span>${botonSeleccion(inscripcion, "B")}</li>`
           ).join("")}
         </ol>
       </div>
@@ -1365,6 +1513,7 @@ async function sortearEquipos() {
 }
 async function iniciarAplicacion() {
   await cargarJugadores();
+  await actualizarPerfilFoto();
   await cargarPartidos();
   await actualizarControlInvitados();
   await cargarInscriptos();
