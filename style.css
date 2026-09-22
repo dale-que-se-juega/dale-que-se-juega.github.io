@@ -231,6 +231,57 @@ a {
   margin-top: 12px;
 }
 
+.auth-ayuda-foto { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+.perfil-foto {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(7, 16, 20, 0.66);
+}
+
+.perfil-foto[hidden] { display: none; }
+
+.perfil-foto-cabecera { display: flex; align-items: center; gap: 14px; }
+
+.perfil-foto-cabecera h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 22px;
+  text-transform: uppercase;
+}
+
+.perfil-foto-cabecera p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.avatar.avatar-perfil { flex-basis: 62px; width: 62px; height: 62px; font-size: 25px; }
+
+.perfil-foto-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 16px; }
+
+.selector-foto,
+#btn-guardar-foto {
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  border-radius: 13px;
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.selector-foto { border: 1px solid var(--sky); color: var(--sky); }
+#btn-guardar-foto { border: 1px solid var(--green); background: var(--green); color: #06120c; }
+#btn-guardar-foto:disabled { opacity: 0.5; cursor: not-allowed; }
+#archivo-foto { position: absolute; width: 1px; height: 1px; opacity: 0; }
+#estado-foto { margin-top: 10px; text-align: left; }
+
 .match-card {
   isolation: isolate;
   padding-top: 22px;
@@ -671,6 +722,8 @@ a {
 }
 
 .avatar {
+  position: relative;
+  overflow: hidden;
   flex: 0 0 42px;
   width: 42px;
   height: 42px;
@@ -683,6 +736,15 @@ a {
   font-family: var(--display);
   font-size: 18px;
   font-weight: 800;
+}
+
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .jugador-info {
@@ -830,6 +892,28 @@ a {
   display: inline-block;
   width: calc(100% - 42px);
   vertical-align: middle;
+}
+
+#equipos-resultado li .equipo-integrante {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#equipos-resultado li .equipo-integrante > span:last-child {
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar.equipo-avatar {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  border-width: 1px;
+  font-size: 14px;
 }
 
 .btn-seleccionar-jugador {
