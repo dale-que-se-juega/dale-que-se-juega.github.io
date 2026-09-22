@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-alias">
+  <link rel="stylesheet" href="style.css?v=20260922-admin">
 </head>
 
 <body>
@@ -72,7 +72,7 @@
   <div id="sesion-activa" class="sesion-activa" hidden>
     <p class="sesion-etiqueta"><i class="fa-solid fa-circle-check"></i> SESIÓN ACTIVA</p>
     <h2>¡Bienvenido, <span id="bienvenida-alias">jugador</span>!</h2>
-    <p>Ya podés anotarte al próximo partido y administrar tu foto.</p>
+    <p id="bienvenida-mensaje">Ya podés anotarte al próximo partido y administrar tu foto.</p>
     <small id="bienvenida-email"></small>
     <button type="button" class="btn-editar-alias" onclick="mostrarEditorAlias()">
       <i class="fa-solid fa-pen"></i> EDITAR NOMBRE
@@ -240,7 +240,8 @@
 </section>
     <section id="jugadores" class="card players-card">
       <h2 class="section-title">Jugadores</h2>
-      <p class="section-description">Administrá los jugadores de tu grupo de fútbol.</p>
+      <p id="descripcion-jugadores" class="section-description">Jugadores que forman parte del grupo.</p>
+      <p id="estado-gestion-jugadores" class="estado" role="status"></p>
       <div id="lista-jugadores"></div>
     </section>
   </main>
@@ -405,12 +406,17 @@ async function actualizarEstadoAcceso() {
   if (!user) return;
 
   const { data: jugador } = await db.from("jugadores")
-    .select("alias")
+    .select("alias, activo, bloqueado")
     .eq("email", user.email)
     .maybeSingle();
   const alias = jugador?.alias?.trim() || user.email.split("@")[0];
   document.getElementById("bienvenida-alias").textContent = alias;
   document.getElementById("bienvenida-email").textContent = user.email;
+  document.getElementById("bienvenida-mensaje").textContent = jugador?.activo === false
+    ? "Tu cuenta fue retirada del grupo. Contactá al administrador."
+    : jugador?.bloqueado
+      ? "Tu cuenta está bloqueada. Contactá al administrador."
+      : "Ya podés anotarte al próximo partido y administrar tu foto.";
 }
 
 function mostrarEditorAlias() {
@@ -500,7 +506,7 @@ async function actualizarPerfilFoto() {
   if (!user) return;
 
   const { data: jugador, error } = await db.from("jugadores")
-    .select("id, alias, foto_path")
+    .select("id, alias, foto_path, activo, bloqueado")
     .eq("email", user.email)
     .maybeSingle();
 
@@ -508,7 +514,8 @@ async function actualizarPerfilFoto() {
   const botonQuitar = document.getElementById("btn-quitar-foto");
   boton.disabled = !!error || !jugador;
   botonQuitar.hidden = true;
-  if (error || !jugador) {
+  if (error || !jugador || jugador.activo === false || jugador.bloqueado) {
+    control.hidden = true;
     estado.textContent = "Tu cuenta aún no figura como jugador. Pedile al administrador que te agregue al grupo.";
     return;
   }
@@ -654,11 +661,17 @@ async function quitarFotoPerfil() {
 }
 
   async function cargarJugadores() {
-  const { data, error } = await db
-    .from("jugadores")
-    .select("*");
+  const esAdmin = await usuarioActualEsAdmin();
+  const consulta = esAdmin
+    ? db.rpc("listar_jugadores_gestion")
+    : db.rpc("listar_jugadores_publicos");
+  const { data, error } = await consulta;
 
   const contenedor = document.getElementById("lista-jugadores");
+  const descripcion = document.getElementById("descripcion-jugadores");
+  descripcion.textContent = esAdmin
+    ? "Gestioná el grupo desde acá. Tu identidad como administrador no se muestra."
+    : "Jugadores que forman parte del grupo.";
 
   if (error) {
     contenedor.innerHTML = "<p>Error al cargar jugadores.</p>";
@@ -666,8 +679,9 @@ async function quitarFotoPerfil() {
     return;
   }
 
-  contenedor.innerHTML = data.map(jugador => `
-  <div class="jugador">
+  const jugadores = Array.isArray(data) ? data : [];
+  contenedor.innerHTML = jugadores.map(jugador => `
+  <div class="jugador ${jugador.activo === false ? "jugador-retirado" : ""}">
 
     <div class="avatar">
       ${contenidoAvatar(jugador)}
@@ -680,13 +694,85 @@ async function quitarFotoPerfil() {
       </div>
 
       <div class="jugador-estado">
-        Jugador del grupo
+        ${jugador.activo === false ? "Retirado del grupo" : jugador.bloqueado ? "Acceso bloqueado" : "Jugador del grupo"}
       </div>
 
     </div>
 
+    ${esAdmin ? `
+      <details class="gestion-jugador">
+        <summary>GESTIONAR</summary>
+        <label for="alias-admin-${escaparHtml(String(jugador.id))}">Nombre o apodo</label>
+        <input id="alias-admin-${escaparHtml(String(jugador.id))}" class="input-field" type="text" maxlength="40" value="${escaparHtml(jugador.alias)}">
+        <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', 'editar')">GUARDAR NOMBRE</button>
+        ${jugador.es_actual ? `<p class="gestion-aviso">Para bloquearte o retirarte, primero cedé la administración.</p>` : `<div class="gestion-jugador-acciones">
+          <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', '${jugador.bloqueado ? "desbloquear" : "bloquear"}')">
+            ${jugador.bloqueado ? "DESBLOQUEAR" : "BLOQUEAR"}
+          </button>
+          <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', '${jugador.activo === false ? "reactivar" : "retirar"}')">
+            ${jugador.activo === false ? "REINCORPORAR" : "RETIRAR"}
+          </button>
+        </div>`}
+        ${!jugador.es_actual && jugador.activo !== false && !jugador.bloqueado ? `
+          <button class="btn-ceder-admin" type="button" onclick="cederAdministracion('${escaparHtml(String(jugador.id))}')">
+            CEDER ADMINISTRACIÓN
+          </button>
+        ` : ""}
+      </details>
+    ` : ""}
+
   </div>
 `).join("");
+}
+
+async function administrarJugador(id, accion) {
+  const estado = document.getElementById("estado-gestion-jugadores");
+  let nuevoAlias = null;
+  if (accion === "editar") {
+    nuevoAlias = document.getElementById(`alias-admin-${id}`).value.trim().replace(/\s+/g, " ");
+    if (nuevoAlias.length < 2 || nuevoAlias.length > 40) {
+      estado.textContent = "El nombre debe tener entre 2 y 40 caracteres.";
+      return;
+    }
+  } else {
+    const mensajes = {
+      bloquear: "¿Querés bloquear a este jugador? No podrá anotarse ni agregar invitados.",
+      desbloquear: "¿Querés desbloquear a este jugador?",
+      retirar: "¿Querés retirarlo del grupo? Se quitará de los partidos abiertos.",
+      reactivar: "¿Querés reincorporar a este jugador al grupo?"
+    };
+    if (!window.confirm(mensajes[accion])) return;
+  }
+
+  estado.textContent = "Guardando cambio...";
+  const { error } = await db.rpc("administrar_jugador", {
+    objetivo_id: String(id), accion, nuevo_alias: nuevoAlias
+  });
+  if (error) {
+    estado.textContent = error.message?.includes("primero ceder")
+      ? "No podés aplicarte esa acción. Primero cedé la administración."
+      : "No se pudo realizar el cambio.";
+    console.error(error);
+    return;
+  }
+  estado.textContent = "Cambio guardado correctamente.";
+  await iniciarAplicacion();
+}
+
+async function cederAdministracion(id) {
+  const estado = document.getElementById("estado-gestion-jugadores");
+  const alias = document.getElementById(`alias-admin-${id}`).value.trim();
+  if (!window.confirm(`¿Querés ceder la administración a ${alias}? Después solo esa persona podrá devolverla.`)) return;
+
+  estado.textContent = "Cediendo administración...";
+  const { error } = await db.rpc("transferir_administracion", { nuevo_admin_id: String(id) });
+  if (error) {
+    estado.textContent = "No se pudo ceder la administración.";
+    console.error(error);
+    return;
+  }
+  estado.textContent = "Administración transferida correctamente.";
+  await iniciarAplicacion();
 }
 async function cargarPartidos() {
   const { data, error } = await db
@@ -968,8 +1054,8 @@ async function actualizarControlInvitados() {
   const control = document.getElementById("invitados-control");
   const { data: { user } } = await db.auth.getUser();
   const esJugador = user && (await db.from("jugadores")
-    .select("id").eq("email", user.email).maybeSingle()).data;
-  control.style.display = partidoActualId && esJugador ? "block" : "none";
+    .select("id, activo, bloqueado").eq("email", user.email).maybeSingle()).data;
+  control.style.display = partidoActualId && esJugador?.activo !== false && !esJugador?.bloqueado ? "block" : "none";
 }
 
 async function agregarInvitado() {
@@ -1168,12 +1254,16 @@ if (!user) {
 
 const { data: jugador, error: errorJugador } = await db
   .from("jugadores")
-  .select("id")
+  .select("id, activo, bloqueado")
   .eq("email", user.email)
   .single();
 
 if (errorJugador || !jugador) {
   estado.textContent = "No encontramos tu jugador.";
+  return;
+}
+if (jugador.activo === false || jugador.bloqueado) {
+  estado.textContent = "Tu cuenta no está habilitada para anotarse.";
   return;
 }
 
@@ -1282,12 +1372,12 @@ await cargarInscriptos();
 
   const { data: jugador } = await db
     .from("jugadores")
-    .select("id")
+    .select("id, activo, bloqueado")
     .eq("email", user.email)
     .maybeSingle();
 
-  if (!jugador) {
-    btnAnotarme.style.display = "block";
+  if (!jugador || jugador.activo === false || jugador.bloqueado) {
+    btnAnotarme.style.display = "none";
     btnBajarme.style.display = "none";
     return;
   }
@@ -1331,13 +1421,7 @@ await cargarInscriptos();
     return;
   }
 
-  const { data: jugador } = await db
-    .from("jugadores")
-    .select("es_admin")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  const esAdmin = jugador && jugador.es_admin === true;
+  const esAdmin = await usuarioActualEsAdmin();
 
   btnSortear.style.display = esAdmin ? "block" : "none";
   btnSortear.disabled = cantidad !== 14;
@@ -1356,17 +1440,8 @@ await cargarInscriptos();
 let seleccionIntercambio = { A: null, B: null };
 
 async function usuarioActualEsAdmin() {
-  const { data: { user } } = await db.auth.getUser();
-
-  if (!user) return false;
-
-  const { data: jugador } = await db
-    .from("jugadores")
-    .select("es_admin")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  return jugador && jugador.es_admin === true;
+  const { data, error } = await db.rpc("usuario_actual_es_admin");
+  return !error && data === true;
 }
 
 async function cargarEquipos() {

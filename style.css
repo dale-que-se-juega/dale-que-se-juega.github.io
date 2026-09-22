@@ -1104,6 +1104,33 @@ a {
   margin-bottom: 30px;
 }
 
+.jugador-retirado { opacity: 0.58; }
+.gestion-jugador { width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.gestion-jugador summary {
+  color: var(--sky);
+  font-family: var(--display);
+  font-weight: 800;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.gestion-jugador label { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
+.gestion-jugador .input-field { margin: 6px 0 8px; }
+.gestion-jugador button {
+  min-height: 39px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--white);
+  font-family: var(--display);
+  font-weight: 800;
+  cursor: pointer;
+}
+.gestion-jugador > button { width: 100%; }
+.gestion-jugador-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.gestion-aviso { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.gestion-jugador .btn-ceder-admin { margin-top: 8px; border-color: var(--green); color: var(--green); }
+
 .app-footer {
   width: min(100%, 460px);
   margin: 0 auto;
