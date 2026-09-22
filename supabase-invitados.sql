@@ -117,13 +117,14 @@ create trigger asignar_cupo_inscripciones
 create or replace function public.revisar_sorteo_al_cambiar_titular()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  if (tg_op = 'INSERT' and new.estado = 'titular') then
-    update public.partidos set sorteo_confirmado = false where id = new.partido_id;
-  elsif (tg_op = 'DELETE' and old.estado = 'titular') then
-    update public.partidos set sorteo_confirmado = false where id = old.partido_id;
-  end if;
   if tg_op = 'DELETE' then
+    if old.estado = 'titular' then
+      update public.partidos set sorteo_confirmado = false where id = old.partido_id;
+    end if;
     return old;
+  end if;
+  if new.estado = 'titular' then
+    update public.partidos set sorteo_confirmado = false where id = new.partido_id;
   end if;
   return new;
 end;
