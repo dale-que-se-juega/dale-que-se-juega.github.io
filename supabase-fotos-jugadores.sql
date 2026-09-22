@@ -67,3 +67,26 @@ $$;
 
 revoke all on function public.guardar_foto_perfil(text) from public;
 grant execute on function public.guardar_foto_perfil(text) to authenticated;
+
+-- Quitar la referencia a la foto sin permitir modificar otros datos del jugador.
+create or replace function public.quitar_foto_perfil()
+returns void language plpgsql security definer set search_path = '' as $$
+declare
+  usuario_email text := (select auth.jwt() ->> 'email');
+begin
+  if usuario_email is null then
+    raise exception 'Primero tenés que iniciar sesión';
+  end if;
+
+  update public.jugadores
+     set foto_path = null
+   where lower(email) = lower(usuario_email);
+
+  if not found then
+    raise exception 'Tu cuenta todavía no figura en la lista de jugadores';
+  end if;
+end;
+$$;
+
+revoke all on function public.quitar_foto_perfil() from public;
+grant execute on function public.quitar_foto_perfil() to authenticated;

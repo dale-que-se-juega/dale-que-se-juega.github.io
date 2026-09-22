@@ -233,6 +233,28 @@ a {
 
 .auth-ayuda-foto { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
 
+.auth-recuperar-enlace {
+  display: block;
+  margin: 14px 0 0 auto;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--sky);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-recuperar-enlace:focus-visible { outline: 2px solid var(--sky); outline-offset: 4px; }
+.auth-recuperar { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; }
+.auth-recuperar[hidden] { display: none; }
+.auth-recuperar h3 { margin: 0; font-family: var(--display); text-transform: uppercase; }
+.auth-recuperar p { margin: 5px 0 12px; color: var(--muted); font-size: 13px; }
+.auth-recuperar .input-field { margin-bottom: 10px; }
+.auth-recuperar .btn-primary { width: 100%; }
+.auth-recuperar .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .perfil-foto {
   margin-top: 22px;
   padding: 16px;
@@ -264,7 +286,8 @@ a {
 .perfil-foto-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 16px; }
 
 .selector-foto,
-#btn-guardar-foto {
+#btn-guardar-foto,
+#btn-quitar-foto {
   min-height: 46px;
   display: grid;
   place-items: center;
@@ -278,7 +301,10 @@ a {
 
 .selector-foto { border: 1px solid var(--sky); color: var(--sky); }
 #btn-guardar-foto { border: 1px solid var(--green); background: var(--green); color: #06120c; }
-#btn-guardar-foto:disabled { opacity: 0.5; cursor: not-allowed; }
+#btn-quitar-foto { grid-column: 1 / -1; border: 1px solid rgba(255, 116, 116, 0.72); background: transparent; color: #ff9b9b; }
+#btn-quitar-foto[hidden] { display: none; }
+#btn-guardar-foto:disabled,
+#btn-quitar-foto:disabled { opacity: 0.5; cursor: not-allowed; }
 #archivo-foto { position: absolute; width: 1px; height: 1px; opacity: 0; }
 #estado-foto { margin-top: 10px; text-align: left; }
 

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-fotos">
+  <link rel="stylesheet" href="style.css?v=20260922-recuperar">
 </head>
 
 <body>
@@ -54,6 +54,15 @@
   <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
 </div>
 
+  <button type="button" class="auth-recuperar-enlace" onclick="solicitarRecuperacion()">¿Olvidaste tu contraseña?</button>
+  <div id="recuperar-contrasena" class="auth-recuperar" hidden>
+    <h3>Elegí una nueva contraseña</h3>
+    <p>Escribila dos veces para confirmar el cambio.</p>
+    <input id="password-nueva" type="password" class="input-field" placeholder="Nueva contraseña" autocomplete="new-password" aria-label="Nueva contraseña">
+    <input id="password-confirmacion" type="password" class="input-field" placeholder="Repetí la contraseña" autocomplete="new-password" aria-label="Repetí la contraseña">
+    <button id="btn-cambiar-contrasena" type="button" class="btn-primary" onclick="cambiarContrasena()" disabled>GUARDAR CONTRASEÑA</button>
+  </div>
+
   <p class="auth-ayuda-foto">Después de confirmar tu email, podés agregar tu foto al perfil.</p>
 
   <p id="estado-auth"></p>
@@ -69,6 +78,7 @@
       <label for="archivo-foto" class="selector-foto">ELEGIR FOTO</label>
       <input id="archivo-foto" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Elegir foto de perfil" onchange="mostrarFotoSeleccionada()">
       <button id="btn-guardar-foto" type="button" onclick="guardarFotoPerfil()">GUARDAR FOTO</button>
+      <button id="btn-quitar-foto" type="button" onclick="quitarFotoPerfil()" hidden>QUITAR FOTO</button>
     </div>
     <p id="estado-foto" class="estado" role="status"></p>
   </div>
@@ -218,7 +228,92 @@
   const SUPABASE_KEY = "sb_publishable_4J2txbexu0gyhnFvmGtDjQ_9Ic2vDN5";
 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const enlaceRecuperacion = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+  let recuperacionValidada = false;
   let partidoActualId = null;
+  function mostrarCambioContrasena() {
+    recuperacionValidada = true;
+    const formulario = document.getElementById("recuperar-contrasena");
+    formulario.hidden = false;
+    document.getElementById("btn-cambiar-contrasena").disabled = false;
+    document.getElementById("estado-auth").textContent = "Elegí una contraseña nueva para tu cuenta.";
+    document.getElementById("acceso").scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (enlaceRecuperacion) {
+    document.getElementById("recuperar-contrasena").hidden = false;
+    document.getElementById("estado-auth").textContent = "Comprobando el enlace de recuperación...";
+  }
+  db.auth.onAuthStateChange(event => {
+    if (event === "PASSWORD_RECOVERY") mostrarCambioContrasena();
+  });
+
+  async function solicitarRecuperacion() {
+    const campo = document.getElementById("email");
+    const estado = document.getElementById("estado-auth");
+    const email = campo.value.trim();
+    if (!email || !campo.checkValidity()) {
+      estado.textContent = "Escribí tu email arriba para enviarte el enlace de recuperación.";
+      campo.focus();
+      return;
+    }
+
+    estado.textContent = "Enviando enlace de recuperación...";
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}`
+    });
+    estado.textContent = error
+      ? "No pudimos enviar el enlace. Esperá un momento e intentá de nuevo."
+      : "Si ese email tiene una cuenta, recibirás un enlace para cambiar la contraseña. Revisá también el correo no deseado.";
+    if (error) console.error(error);
+  }
+
+  async function cambiarContrasena() {
+    const estado = document.getElementById("estado-auth");
+    if (!recuperacionValidada) {
+      estado.textContent = "El enlace todavía no se validó. Si venció, solicitá uno nuevo.";
+      return;
+    }
+    const password = document.getElementById("password-nueva").value;
+    const confirmacion = document.getElementById("password-confirmacion").value;
+    const boton = document.getElementById("btn-cambiar-contrasena");
+    if (password.length < 8) {
+      estado.textContent = "La nueva contraseña debe tener al menos 8 caracteres.";
+      return;
+    }
+    if (password !== confirmacion) {
+      estado.textContent = "Las contraseñas no coinciden.";
+      return;
+    }
+
+    boton.disabled = true;
+    estado.textContent = "Guardando contraseña...";
+    try {
+      const { data: { user }, error: errorUsuario } = await db.auth.getUser();
+      if (errorUsuario || !user) {
+        estado.textContent = "El enlace venció o no es válido. Solicitá uno nuevo con tu email.";
+        return;
+      }
+      const { error } = await db.auth.updateUser({ password });
+      if (error) {
+        estado.textContent = "No se pudo cambiar la contraseña. Solicitá un enlace nuevo e intentá otra vez.";
+        console.error(error);
+        return;
+      }
+      document.getElementById("password-nueva").value = "";
+      document.getElementById("password-confirmacion").value = "";
+      document.getElementById("recuperar-contrasena").hidden = true;
+      window.history.replaceState(null, "", window.location.pathname);
+      estado.textContent = "Contraseña actualizada. Ya podés usar tu cuenta.";
+      await iniciarAplicacion();
+    } catch (error) {
+      console.error(error);
+      estado.textContent = "No se pudo cambiar la contraseña. Intentá nuevamente.";
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
   async function registrarse() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -289,13 +384,16 @@ async function actualizarPerfilFoto() {
     .maybeSingle();
 
   const boton = document.getElementById("btn-guardar-foto");
+  const botonQuitar = document.getElementById("btn-quitar-foto");
   boton.disabled = !!error || !jugador;
+  botonQuitar.hidden = true;
   if (error || !jugador) {
     estado.textContent = "Tu cuenta aún no figura como jugador. Pedile al administrador que te agregue al grupo.";
     return;
   }
 
   document.getElementById("perfil-avatar").innerHTML = contenidoAvatar(jugador);
+  botonQuitar.hidden = !jugador.foto_path;
   estado.textContent = jugador.foto_path ? "Podés cambiar tu foto cuando quieras." : "Elegí una foto para tu perfil.";
 }
 
@@ -380,6 +478,57 @@ async function guardarFotoPerfil() {
     console.error(error);
   } finally {
     boton.disabled = false;
+  }
+}
+
+async function quitarFotoPerfil() {
+  const estado = document.getElementById("estado-foto");
+  const botonGuardar = document.getElementById("btn-guardar-foto");
+  const botonQuitar = document.getElementById("btn-quitar-foto");
+  if (!window.confirm("¿Querés quitar tu foto de perfil?")) return;
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  const { data: jugador, error: errorJugador } = await db.from("jugadores")
+    .select("foto_path").eq("email", user.email).maybeSingle();
+  if (errorJugador || !jugador) {
+    estado.textContent = "Tu cuenta aún no figura como jugador del grupo.";
+    return;
+  }
+  if (!jugador.foto_path) {
+    estado.textContent = "Tu perfil ya está sin foto.";
+    await actualizarPerfilFoto();
+    return;
+  }
+
+  botonGuardar.disabled = true;
+  botonQuitar.disabled = true;
+  estado.textContent = "Quitando foto...";
+  try {
+    const { error: errorGuardado } = await db.rpc("quitar_foto_perfil");
+    if (errorGuardado) throw errorGuardado;
+
+    if (jugador.foto_path.startsWith(`${user.id}/`)) {
+      const { error: errorBorrado } = await db.storage.from("jugadores-fotos").remove([jugador.foto_path]);
+      if (errorBorrado) console.error(errorBorrado);
+    }
+
+    document.getElementById("archivo-foto").value = "";
+    await cargarJugadores();
+    await cargarInscriptos();
+    await cargarEquipos();
+    await actualizarPerfilFoto();
+    estado.textContent = "Foto de perfil eliminada.";
+  } catch (error) {
+    estado.textContent = "No se pudo quitar la foto. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    botonGuardar.disabled = false;
+    botonQuitar.disabled = false;
   }
 }
 
