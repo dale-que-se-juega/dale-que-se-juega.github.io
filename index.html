@@ -1343,13 +1343,17 @@ async function sortearEquipos() {
         .update({ equipo: indice < 7 ? "A" : "B" })
         .eq("id", inscripcion.id)
         .eq("partido_id", partidoActualId)
+        .select("id")
     )
   );
 
-  const huboError = resultados.some(resultado => resultado.error);
+  const huboError = resultados.some(resultado =>
+    resultado.error || resultado.data?.length !== 1
+  );
 
   if (huboError) {
-    estadoSorteo.textContent = "No se pudo completar el sorteo.";
+    estadoSorteo.textContent = "El sorteo quedó incompleto. Volvé a sortear antes de confirmar.";
+    await cargarEquipos();
     return;
   }
 
