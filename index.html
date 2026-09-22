@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-bienvenida">
+  <link rel="stylesheet" href="style.css?v=20260922-alias">
 </head>
 
 <body>
@@ -74,6 +74,18 @@
     <h2>¡Bienvenido, <span id="bienvenida-alias">jugador</span>!</h2>
     <p>Ya podés anotarte al próximo partido y administrar tu foto.</p>
     <small id="bienvenida-email"></small>
+    <button type="button" class="btn-editar-alias" onclick="mostrarEditorAlias()">
+      <i class="fa-solid fa-pen"></i> EDITAR NOMBRE
+    </button>
+    <div id="editor-alias" class="editor-alias" hidden>
+      <label for="nuevo-alias">Nombre que verán los demás</label>
+      <input id="nuevo-alias" type="text" class="input-field" maxlength="40" autocomplete="nickname" placeholder="Tu nombre o apodo">
+      <div class="editor-alias-acciones">
+        <button type="button" class="btn-secondary" onclick="cancelarEditorAlias()">CANCELAR</button>
+        <button id="btn-guardar-alias" type="button" class="btn-primary" onclick="guardarAlias()">GUARDAR</button>
+      </div>
+      <p id="estado-alias" class="estado" role="status"></p>
+    </div>
     <button type="button" class="btn-cerrar-sesion" onclick="cerrarSesion()">
       <i class="fa-solid fa-arrow-right-from-bracket"></i> CERRAR SESIÓN
     </button>
@@ -399,6 +411,53 @@ async function actualizarEstadoAcceso() {
   const alias = jugador?.alias?.trim() || user.email.split("@")[0];
   document.getElementById("bienvenida-alias").textContent = alias;
   document.getElementById("bienvenida-email").textContent = user.email;
+}
+
+function mostrarEditorAlias() {
+  const editor = document.getElementById("editor-alias");
+  const campo = document.getElementById("nuevo-alias");
+  campo.value = document.getElementById("bienvenida-alias").textContent;
+  document.getElementById("estado-alias").textContent = "";
+  editor.hidden = false;
+  campo.focus();
+}
+
+function cancelarEditorAlias() {
+  document.getElementById("editor-alias").hidden = true;
+  document.getElementById("estado-alias").textContent = "";
+}
+
+async function guardarAlias() {
+  const campo = document.getElementById("nuevo-alias");
+  const estado = document.getElementById("estado-alias");
+  const boton = document.getElementById("btn-guardar-alias");
+  const alias = campo.value.trim().replace(/\s+/g, " ");
+
+  if (alias.length < 2 || alias.length > 40) {
+    estado.textContent = "El nombre debe tener entre 2 y 40 caracteres.";
+    return;
+  }
+
+  boton.disabled = true;
+  estado.textContent = "Guardando nombre...";
+  try {
+    const { error } = await db.rpc("actualizar_alias_perfil", { nuevo_alias: alias });
+    if (error) {
+      estado.textContent = error.message?.includes("ya está en uso")
+        ? "Ese nombre ya está siendo usado por otro jugador."
+        : "No se pudo cambiar el nombre. Intentá nuevamente.";
+      console.error(error);
+      return;
+    }
+    document.getElementById("editor-alias").hidden = true;
+    document.getElementById("estado-auth").textContent = "Nombre actualizado correctamente.";
+    await iniciarAplicacion();
+  } catch (error) {
+    estado.textContent = "No se pudo cambiar el nombre. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    boton.disabled = false;
+  }
 }
 
 async function cerrarSesion() {

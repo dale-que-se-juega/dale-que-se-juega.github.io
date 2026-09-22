@@ -231,6 +231,7 @@ a {
 
 .sesion-activa > p:not(.sesion-etiqueta) { margin: 12px auto 5px; color: var(--muted); line-height: 1.5; }
 .sesion-activa small { display: block; color: var(--sky); }
+.btn-editar-alias,
 .btn-cerrar-sesion {
   width: 100%;
   min-height: 46px;
@@ -244,6 +245,22 @@ a {
   font-weight: 800;
   cursor: pointer;
 }
+
+.btn-editar-alias { border-color: var(--sky); color: var(--sky); }
+.editor-alias {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-align: left;
+  background: rgba(7, 16, 20, 0.66);
+}
+.editor-alias[hidden] { display: none; }
+.editor-alias label { color: var(--muted); font-size: 12px; }
+.editor-alias-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+.editor-alias-acciones button { min-height: 42px; }
+#btn-guardar-alias:disabled { opacity: 0.5; cursor: not-allowed; }
+#estado-alias { margin: 9px 0 0; text-align: left; }
 
 .input-field {
   width: 100%;
