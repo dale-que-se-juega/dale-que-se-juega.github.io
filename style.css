@@ -551,16 +551,19 @@ a {
 .invitados-control {
   position: relative;
   z-index: 2;
-  margin-top: 17px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(7, 16, 20, 0.7);
 }
 
 .invitados-control h3 {
   margin: 0;
   font-family: var(--display);
-  font-size: 20px;
+  font-size: 19px;
   text-transform: uppercase;
+  letter-spacing: 0.6px;
 }
 
 .invitados-control h3 i { color: var(--green); }
@@ -582,23 +585,37 @@ a {
   border-radius: 12px;
   background: #081216;
   color: var(--white);
+  font-size: 13px;
+  outline: none;
+  color-scheme: dark;
 }
 
+.invitados-formulario input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(43, 234, 120, 0.12);
+}
+
+.invitados-formulario input::placeholder { color: #77868c; }
+
 .invitados-formulario button {
-  padding: 0 15px;
+  min-width: 84px;
+  padding: 0 12px;
   border: 1px solid var(--green);
   border-radius: 12px;
   background: var(--green);
   color: #06120c;
   font-family: var(--display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
 
 .invitados-formulario button:disabled { opacity: 0.5; cursor: wait; }
 
+#estado-invitados { text-align: left; }
+
 .quitar-invitado {
+  flex-shrink: 0;
   padding: 5px 8px;
   border: 1px solid var(--line);
   border-radius: 9px;
