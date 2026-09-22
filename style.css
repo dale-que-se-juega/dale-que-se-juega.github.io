@@ -548,6 +548,66 @@ a {
   font-size: 24px;
 }
 
+.invitados-control {
+  position: relative;
+  z-index: 2;
+  margin-top: 17px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.invitados-control h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.invitados-control h3 i { color: var(--green); }
+
+.invitados-control > p:not(.estado) {
+  margin: 6px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.invitados-formulario { display: flex; gap: 8px; }
+
+.invitados-formulario input {
+  min-width: 0;
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #081216;
+  color: var(--white);
+}
+
+.invitados-formulario button {
+  padding: 0 15px;
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  background: var(--green);
+  color: #06120c;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.invitados-formulario button:disabled { opacity: 0.5; cursor: wait; }
+
+.quitar-invitado {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: #ff9aa2;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .estado {
   margin: 13px 0 0;
   color: var(--muted);
@@ -795,6 +855,25 @@ a {
 #btn-confirmar-equipos {
   margin-top: 10px;
   font-size: 15px;
+}
+
+.btn-whatsapp {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 10px;
+  border: 1px solid #25d366;
+  border-radius: 17px;
+  background: #25d366;
+  color: #06120c;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-whatsapp i {
+  margin-right: 7px;
+  font-size: 19px;
 }
 
 .equipos-espera {

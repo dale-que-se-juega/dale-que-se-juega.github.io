@@ -143,6 +143,15 @@
   <button id="btn-anotarme" class="btn-primary signup-button" onclick="anotarme()"><i class="fa-regular fa-futbol"></i> ANOTARME</button>
 <button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
+<div id="invitados-control" class="invitados-control" style="display:none;">
+  <h3><i class="fa-solid fa-user-plus"></i> Traer un invitado</h3>
+  <p>Podés sumar amigos de fuera del grupo. Cada uno ocupa un lugar.</p>
+  <div class="invitados-formulario">
+    <input id="alias-invitado" type="text" maxlength="40" autocomplete="off" placeholder="Nombre del invitado" aria-label="Nombre del invitado">
+    <button id="btn-agregar-invitado" type="button" onclick="agregarInvitado()">Agregar</button>
+  </div>
+  <p id="estado-invitados" class="estado" role="status"></p>
+</div>
 </section>
     <section id="inscriptos" class="card">
   <div class="section-heading">
@@ -496,8 +505,119 @@ async function finalizarPartido() {
 
 async function refrescarPartidoActual() {
   await cargarPartidos();
+  await actualizarControlInvitados();
   await cargarInscriptos();
   await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+function escaparHtml(valor) {
+  return String(valor).replace(/[&<>"']/g, caracter => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[caracter]);
+}
+
+async function obtenerParticipantes() {
+  if (!partidoActualId) return { data: [], error: null };
+
+  const [jugadores, invitados] = await Promise.all([
+    db.from("inscripciones")
+      .select("id, estado, equipo, jugadores(alias)")
+      .eq("partido_id", partidoActualId),
+    db.from("invitados")
+      .select("id, alias, estado, equipo, agregado_por")
+      .eq("partido_id", partidoActualId)
+  ]);
+
+  if (jugadores.error || invitados.error) {
+    return { data: null, error: jugadores.error || invitados.error };
+  }
+
+  return {
+    data: [
+      ...jugadores.data.map(item => ({
+        ...item, alias: item.jugadores?.alias || "Jugador", tipo: "jugador"
+      })),
+      ...invitados.data.map(item => ({ ...item, tipo: "invitado" }))
+    ],
+    error: null
+  };
+}
+
+async function actualizarControlInvitados() {
+  const control = document.getElementById("invitados-control");
+  const { data: { user } } = await db.auth.getUser();
+  const esJugador = user && (await db.from("jugadores")
+    .select("id").eq("email", user.email).maybeSingle()).data;
+  control.style.display = partidoActualId && esJugador ? "block" : "none";
+}
+
+async function agregarInvitado() {
+  const campo = document.getElementById("alias-invitado");
+  const estado = document.getElementById("estado-invitados");
+  const boton = document.getElementById("btn-agregar-invitado");
+  const alias = campo.value.trim().replace(/\s+/g, " ");
+
+  if (!partidoActualId) {
+    estado.textContent = "Primero hay que crear un partido.";
+    return;
+  }
+  if (alias.length < 2 || alias.length > 40) {
+    estado.textContent = "Escribí un nombre de entre 2 y 40 caracteres.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  boton.disabled = true;
+  const { data: invitado, error } = await db.from("invitados")
+    .insert({ partido_id: partidoActualId, alias, agregado_por: user.id })
+    .select("estado")
+    .single();
+  boton.disabled = false;
+
+  if (error) {
+    estado.textContent = error.code === "23505"
+      ? "Ya hay un invitado con ese nombre en este partido."
+      : "No se pudo anotar al invitado. Revisá que el partido siga abierto.";
+    console.error(error);
+    return;
+  }
+
+  campo.value = "";
+  estado.textContent = invitado.estado === "titular"
+    ? `${alias} quedó anotado como titular.`
+    : `${alias} quedó anotado como suplente.`;
+  await cargarInscriptos();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+async function quitarInvitado(id) {
+  if (!partidoActualId) return;
+  const estado = document.getElementById("estado-invitados");
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  const { data, error } = await db.from("invitados")
+    .delete()
+    .eq("id", id)
+    .eq("partido_id", partidoActualId)
+    .eq("agregado_por", user.id)
+    .select("id");
+
+  if (error || !data?.length) {
+    estado.textContent = "No se pudo quitar al invitado.";
+    return;
+  }
+  estado.textContent = "Invitado quitado del partido.";
+  await cargarInscriptos();
   await configurarSorteo();
   await cargarEquipos();
 }
@@ -512,22 +632,14 @@ async function refrescarPartidoActual() {
     return;
   }
 
-  const { data, error } = await db
-    .from("inscripciones")
-    .select(`
-      estado,
-      equipo,
-      jugadores (
-        alias
-      )
-    `)
-    .eq("partido_id", partidoActualId);
+  const { data, error } = await obtenerParticipantes();
 
   if (error) {
     contenedor.innerHTML = "<p>Error al cargar inscriptos.</p>";
     console.error(error);
     return;
   }
+const { data: { user } } = await db.auth.getUser();
 const cantidad = data.filter(
   inscripcion => inscripcion.estado === "titular"
 ).length;
@@ -567,22 +679,25 @@ contenedor.innerHTML = `
   ${titulares.map(inscripcion => `
     <div class="jugador">
       <div class="avatar">
-        ${inscripcion.jugadores.alias.charAt(0).toUpperCase()}
+        ${escaparHtml(inscripcion.alias.charAt(0).toUpperCase())}
       </div>
 
       <div class="jugador-info">
         <div class="jugador-nombre">
-          ${inscripcion.jugadores.alias}
+          ${escaparHtml(inscripcion.alias)}
         </div>
 
         <div class="jugador-estado">
-          Confirmado para el partido
+          ${inscripcion.tipo === "invitado" ? "Invitado confirmado" : "Confirmado para el partido"}
         </div>
       </div>
 
       <span class="badge">
-        Titular
+        ${inscripcion.tipo === "invitado" ? "Invitado" : "Titular"}
       </span>
+      ${inscripcion.tipo === "invitado" && inscripcion.agregado_por === user?.id
+        ? `<button class="quitar-invitado" type="button" onclick="quitarInvitado(${Number(inscripcion.id)})" aria-label="Quitar a ${escaparHtml(inscripcion.alias)}">Quitar</button>`
+        : ""}
     </div>
   `).join("")}
 
@@ -593,22 +708,25 @@ contenedor.innerHTML = `
       ? suplentes.map(inscripcion => `
           <div class="jugador">
             <div class="avatar">
-              ${inscripcion.jugadores.alias.charAt(0).toUpperCase()}
+                ${escaparHtml(inscripcion.alias.charAt(0).toUpperCase())}
             </div>
 
             <div class="jugador-info">
               <div class="jugador-nombre">
-                ${inscripcion.jugadores.alias}
+                  ${escaparHtml(inscripcion.alias)}
               </div>
 
               <div class="jugador-estado">
-                En lista de espera
+                  ${inscripcion.tipo === "invitado" ? "Invitado en lista de espera" : "En lista de espera"}
               </div>
             </div>
 
             <span class="badge">
-              Suplente
+              ${inscripcion.tipo === "invitado" ? "Invitado" : "Suplente"}
             </span>
+            ${inscripcion.tipo === "invitado" && inscripcion.agregado_por === user?.id
+              ? `<button class="quitar-invitado" type="button" onclick="quitarInvitado(${Number(inscripcion.id)})" aria-label="Quitar a ${escaparHtml(inscripcion.alias)}">Quitar</button>`
+              : ""}
           </div>
         `).join("")
       : "<p class='estado'>No hay suplentes.</p>"
@@ -653,18 +771,15 @@ if (inscripcionExistente) {
   return;
 }
 
-const { count, error: errorCupo } = await db
-  .from("inscripciones")
-  .select("*", { count: "exact", head: true })
-  .eq("partido_id", partidoActualId)
-  .eq("estado", "titular");
+const { data: participantes, error: errorCupo } = await obtenerParticipantes();
 
 if (errorCupo) {
   estado.textContent = "Error al comprobar los lugares disponibles.";
   return;
 }
 
-const nuevoEstado = count < 14 ? "titular" : "suplente";
+const nuevoEstado = participantes.filter(item => item.estado === "titular").length < 14
+  ? "titular" : "suplente";
 
 const { error } = await db
   .from("inscripciones")
@@ -679,10 +794,11 @@ if (error) {
   return;
 }
 
-estado.textContent = "Te anotaste correctamente.";
+  estado.textContent = "Te anotaste correctamente.";
 await cargarInscriptos();
   await actualizarBotonesInscripcion();
   await configurarSorteo();
+  await cargarEquipos();
 }
   async function bajarme() {
   const estado = document.getElementById("estado-inscripcion");
@@ -726,6 +842,7 @@ await cargarInscriptos();
   await cargarInscriptos();
   await actualizarBotonesInscripcion();
   await configurarSorteo();
+  await cargarEquipos();
 }
   async function actualizarBotonesInscripcion() {
   const btnAnotarme = document.getElementById("btn-anotarme");
@@ -781,13 +898,13 @@ await cargarInscriptos();
 
   const { data: { user } } = await db.auth.getUser();
 
-  const { count } = await db
-    .from("inscripciones")
-    .select("*", { count: "exact", head: true })
-    .eq("partido_id", partidoActualId)
-    .eq("estado", "titular");
-
-  const cantidad = count || 0;
+  const { data: participantes, error: errorParticipantes } = await obtenerParticipantes();
+  if (errorParticipantes) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent = "No se pudo comprobar la lista de titulares.";
+    return;
+  }
+  const cantidad = participantes.filter(item => item.estado === "titular").length;
 
   if (!user) {
     btnSortear.style.display = "none";
@@ -855,17 +972,7 @@ async function cargarEquipos() {
 
   const sorteoConfirmado = partido && partido.sorteo_confirmado === true;
 
-  const { data, error } = await db
-    .from("inscripciones")
-    .select(`
-      id,
-      equipo,
-      jugadores (
-        alias
-      )
-    `)
-    .eq("partido_id", partidoActualId)
-    .eq("estado", "titular");
+  const { data, error } = await obtenerParticipantes();
 
   if (error) {
     resultado.innerHTML = "<p>Error al cargar los equipos.</p>";
@@ -873,8 +980,8 @@ async function cargarEquipos() {
   }
 
   const esAdmin = await usuarioActualEsAdmin();
-  const equipoA = data.filter(inscripcion => inscripcion.equipo === "A");
-  const equipoB = data.filter(inscripcion => inscripcion.equipo === "B");
+  const equipoA = data.filter(inscripcion => inscripcion.estado === "titular" && inscripcion.equipo === "A");
+  const equipoB = data.filter(inscripcion => inscripcion.estado === "titular" && inscripcion.equipo === "B");
 
   if (equipoA.length === 0 && equipoB.length === 0) {
     resultado.innerHTML = "";
@@ -897,9 +1004,10 @@ async function cargarEquipos() {
          type="button"
          class="btn-seleccionar-jugador"
          data-id="${inscripcion.id}"
+         data-tipo="${inscripcion.tipo}"
          data-equipo="${equipo}"
          onclick="seleccionarJugadorParaCambio(this)"
-         aria-label="Seleccionar a ${inscripcion.jugadores.alias} del Equipo ${equipo}"
+         aria-label="Seleccionar a ${escaparHtml(inscripcion.alias)} del Equipo ${equipo}"
        ><i class="fa-solid fa-arrow-right-arrow-left"></i></button>`
     : "";
 
@@ -909,7 +1017,7 @@ async function cargarEquipos() {
         <h3><span class="team-dot team-a"></span> Equipo A</h3>
         <ol>
           ${equipoA.map(inscripcion =>
-            `<li><span>${inscripcion.jugadores.alias}</span>${botonSeleccion(inscripcion, "A")}</li>`
+            `<li><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span>${botonSeleccion(inscripcion, "A")}</li>`
           ).join("")}
         </ol>
       </div>
@@ -918,7 +1026,7 @@ async function cargarEquipos() {
         <h3><span class="team-dot team-b"></span> Equipo B</h3>
         <ol>
           ${equipoB.map(inscripcion =>
-            `<li><span>${inscripcion.jugadores.alias}</span>${botonSeleccion(inscripcion, "B")}</li>`
+            `<li><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span>${botonSeleccion(inscripcion, "B")}</li>`
           ).join("")}
         </ol>
       </div>
@@ -949,6 +1057,17 @@ async function cargarEquipos() {
             <i class="fa-solid fa-circle-check"></i>
             ${sorteoConfirmado ? "EQUIPOS CONFIRMADOS" : "CONFIRMAR Y PUBLICAR EQUIPOS"}
           </button>
+          ${sorteoConfirmado ? `
+            <button
+              id="btn-compartir-whatsapp"
+              type="button"
+              class="btn-whatsapp"
+              onclick="compartirEquiposWhatsapp()"
+            >
+              <i class="fa-brands fa-whatsapp"></i>
+              COMPARTIR POR WHATSAPP
+            </button>
+          ` : ""}
         </div>
       ` : ""}
     </div>
@@ -959,17 +1078,17 @@ async function cargarEquipos() {
 
 function seleccionarJugadorParaCambio(boton) {
   const equipo = boton.dataset.equipo;
-  const id = boton.dataset.id;
+  const seleccionado = `${boton.dataset.tipo}:${boton.dataset.id}`;
 
   seleccionIntercambio[equipo] =
-    seleccionIntercambio[equipo] === id ? null : id;
+    seleccionIntercambio[equipo] === seleccionado ? null : seleccionado;
 
   document
     .querySelectorAll(`.btn-seleccionar-jugador[data-equipo="${equipo}"]`)
     .forEach(opcion => {
       opcion.classList.toggle(
         "seleccionado",
-        opcion.dataset.id === seleccionIntercambio[equipo]
+        `${opcion.dataset.tipo}:${opcion.dataset.id}` === seleccionIntercambio[equipo]
       );
     });
 
@@ -1006,10 +1125,16 @@ async function intercambiarJugadores() {
     return;
   }
 
+  const [tipoA, idA] = seleccionIntercambio.A.split(":");
+  const [tipoB, idB] = seleccionIntercambio.B.split(":");
+  const tablaA = tipoA === "invitado" ? "invitados" : "inscripciones";
+  const tablaB = tipoB === "invitado" ? "invitados" : "inscripciones";
+
   const { data: cambioA, error: errorA } = await db
-    .from("inscripciones")
+    .from(tablaA)
     .update({ equipo: "B" })
-    .eq("id", seleccionIntercambio.A)
+    .eq("id", idA)
+    .eq("partido_id", partidoActualId)
     .eq("equipo", "A")
     .select("id")
     .maybeSingle();
@@ -1021,20 +1146,24 @@ async function intercambiarJugadores() {
   }
 
   const { data: cambioB, error: errorB } = await db
-    .from("inscripciones")
+    .from(tablaB)
     .update({ equipo: "A" })
-    .eq("id", seleccionIntercambio.B)
+    .eq("id", idB)
+    .eq("partido_id", partidoActualId)
     .eq("equipo", "B")
     .select("id")
     .maybeSingle();
 
   if (errorB || !cambioB) {
-    await db
-      .from("inscripciones")
+    const { error: errorReversion } = await db
+      .from(tablaA)
       .update({ equipo: "A" })
-      .eq("id", seleccionIntercambio.A);
+      .eq("id", idA)
+      .eq("partido_id", partidoActualId);
 
-    estadoSorteo.textContent = "No se pudo completar el intercambio.";
+    estadoSorteo.textContent = errorReversion
+      ? "El intercambio quedó incompleto. Revisá los equipos antes de confirmar."
+      : "No se pudo completar el intercambio.";
     btnIntercambiar.disabled = false;
     return;
   }
@@ -1054,21 +1183,18 @@ async function confirmarEquipos() {
     return;
   }
 
-  const { data: equipos, error } = await db
-    .from("inscripciones")
-    .select("equipo")
-    .eq("partido_id", partidoActualId)
-    .eq("estado", "titular");
+  const { data: equipos, error } = await obtenerParticipantes();
 
   if (error) {
     estadoSorteo.textContent = "No se pudieron comprobar los equipos.";
     return;
   }
 
-  const cantidadA = equipos.filter(jugador => jugador.equipo === "A").length;
-  const cantidadB = equipos.filter(jugador => jugador.equipo === "B").length;
+  const cantidadA = equipos.filter(jugador => jugador.estado === "titular" && jugador.equipo === "A").length;
+  const cantidadB = equipos.filter(jugador => jugador.estado === "titular" && jugador.equipo === "B").length;
 
-  if (cantidadA !== 7 || cantidadB !== 7) {
+  if (cantidadA !== 7 || cantidadB !== 7 ||
+      equipos.filter(jugador => jugador.estado === "titular").length !== 14) {
     estadoSorteo.textContent = "Antes de confirmar debe haber 7 jugadores en cada equipo.";
     return;
   }
@@ -1093,6 +1219,78 @@ async function confirmarEquipos() {
   await cargarEquipos();
 }
 
+async function compartirEquiposWhatsapp() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+
+  if (!partidoActualId || !(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede compartir los equipos.";
+    return;
+  }
+
+  const { data: partido, error: errorPartido } = await db
+    .from("partidos")
+    .select("dia, fecha, hora, sorteo_confirmado")
+    .eq("id", partidoActualId)
+    .maybeSingle();
+
+  if (errorPartido || !partido || !partido.sorteo_confirmado) {
+    estadoSorteo.textContent = "Primero confirmá los equipos para compartirlos.";
+    return;
+  }
+
+  const { data: inscripciones, error } = await obtenerParticipantes();
+
+  if (error) {
+    estadoSorteo.textContent = "No se pudieron preparar los equipos para compartir.";
+    return;
+  }
+
+  const equipoA = inscripciones.filter(jugador =>
+    jugador.estado === "titular" && jugador.equipo === "A"
+  );
+  const equipoB = inscripciones.filter(jugador =>
+    jugador.estado === "titular" && jugador.equipo === "B"
+  );
+  const suplentes = inscripciones.filter(jugador => jugador.estado === "suplente");
+
+  const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
+  const fechaFormateada = fechaPartido.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  const horaFormateada = partido.hora ? partido.hora.slice(0, 5) : "21:00";
+  const listar = lista => lista
+    .map((jugador, indice) => `${indice + 1}. ${jugador.alias}${jugador.tipo === "invitado" ? " (invitado)" : ""}`)
+    .join("\n");
+
+  let mensaje =
+`⚽ *FULBO MANAGER*
+📅 ${partido.dia.toUpperCase()} ${fechaFormateada}
+🕘 ${horaFormateada} HS
+
+🟢 *EQUIPO A*
+${listar(equipoA)}
+
+🔴 *EQUIPO B*
+${listar(equipoB)}`;
+
+  if (suplentes.length > 0) {
+    mensaje += `\n\n🟡 *SUPLENTES*\n${listar(suplentes)}`;
+  }
+
+  mensaje += "\n\n_Buen fútbol, buenos amigos_";
+
+  const enlace = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+  const ventana = document.createElement("a");
+  ventana.href = enlace;
+  ventana.target = "_blank";
+  ventana.rel = "noopener noreferrer";
+  document.body.appendChild(ventana);
+  ventana.click();
+  ventana.remove();
+}
+
 async function sortearEquipos() {
   const estadoSorteo = document.getElementById("estado-sorteo");
 
@@ -1101,11 +1299,13 @@ async function sortearEquipos() {
     return;
   }
 
-  const { data: titulares, error } = await db
-    .from("inscripciones")
-    .select("id")
-    .eq("partido_id", partidoActualId)
-    .eq("estado", "titular");
+  if (!(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede sortear los equipos.";
+    return;
+  }
+
+  const { data: participantes, error } = await obtenerParticipantes();
+  const titulares = participantes?.filter(item => item.estado === "titular");
 
   if (error) {
     estadoSorteo.textContent = "Error al obtener los titulares.";
@@ -1139,9 +1339,10 @@ async function sortearEquipos() {
   const resultados = await Promise.all(
     mezclados.map((inscripcion, indice) =>
       db
-        .from("inscripciones")
+        .from(inscripcion.tipo === "invitado" ? "invitados" : "inscripciones")
         .update({ equipo: indice < 7 ? "A" : "B" })
         .eq("id", inscripcion.id)
+        .eq("partido_id", partidoActualId)
     )
   );
 
@@ -1161,6 +1362,7 @@ async function sortearEquipos() {
 async function iniciarAplicacion() {
   await cargarJugadores();
   await cargarPartidos();
+  await actualizarControlInvitados();
   await cargarInscriptos();
   await actualizarBotonesInscripcion();
   await configurarSorteo();
