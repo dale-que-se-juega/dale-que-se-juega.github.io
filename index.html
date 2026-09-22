@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-recuperar">
+  <link rel="stylesheet" href="style.css?v=20260922-bienvenida">
 </head>
 
 <body>
@@ -33,28 +33,33 @@
 
   <main class="app">
     <section id="acceso" class="card auth-card">
-  <h2 class="section-title"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar</h2>
+  <div id="formulario-acceso">
+    <div id="datos-acceso">
+      <h2 class="section-title"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar</h2>
 
-  <input
-    type="email"
-    id="email"
-    class="input-field"
-    placeholder="Tu email"
-  >
+      <input
+        type="email"
+        id="email"
+        class="input-field"
+        placeholder="Tu email"
+      >
 
-  <input
-    type="password"
-    id="password"
-    class="input-field"
-    placeholder="Tu contraseña"
-  >
+      <input
+        type="password"
+        id="password"
+        class="input-field"
+        placeholder="Tu contraseña"
+      >
 
-<div class="auth-actions">
-  <button class="btn-secondary" onclick="registrarse()">Registrarme</button>
-  <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
-</div>
+      <div class="auth-actions">
+        <button class="btn-secondary" onclick="registrarse()">Registrarme</button>
+        <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
+      </div>
 
-  <button type="button" class="auth-recuperar-enlace" onclick="solicitarRecuperacion()">¿Olvidaste tu contraseña?</button>
+      <button type="button" class="auth-recuperar-enlace" onclick="solicitarRecuperacion()">¿Olvidaste tu contraseña?</button>
+      <p class="auth-ayuda-foto">Después de confirmar tu email, podés agregar tu foto al perfil.</p>
+    </div>
+
   <div id="recuperar-contrasena" class="auth-recuperar" hidden>
     <h3>Elegí una nueva contraseña</h3>
     <p>Escribila dos veces para confirmar el cambio.</p>
@@ -62,8 +67,17 @@
     <input id="password-confirmacion" type="password" class="input-field" placeholder="Repetí la contraseña" autocomplete="new-password" aria-label="Repetí la contraseña">
     <button id="btn-cambiar-contrasena" type="button" class="btn-primary" onclick="cambiarContrasena()" disabled>GUARDAR CONTRASEÑA</button>
   </div>
+  </div>
 
-  <p class="auth-ayuda-foto">Después de confirmar tu email, podés agregar tu foto al perfil.</p>
+  <div id="sesion-activa" class="sesion-activa" hidden>
+    <p class="sesion-etiqueta"><i class="fa-solid fa-circle-check"></i> SESIÓN ACTIVA</p>
+    <h2>¡Bienvenido, <span id="bienvenida-alias">jugador</span>!</h2>
+    <p>Ya podés anotarte al próximo partido y administrar tu foto.</p>
+    <small id="bienvenida-email"></small>
+    <button type="button" class="btn-cerrar-sesion" onclick="cerrarSesion()">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i> CERRAR SESIÓN
+    </button>
+  </div>
 
   <p id="estado-auth"></p>
   <div id="perfil-foto" class="perfil-foto" hidden>
@@ -230,9 +244,14 @@
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const enlaceRecuperacion = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
   let recuperacionValidada = false;
+  let modoRecuperacion = enlaceRecuperacion;
   let partidoActualId = null;
   function mostrarCambioContrasena() {
     recuperacionValidada = true;
+    modoRecuperacion = true;
+    document.getElementById("formulario-acceso").hidden = false;
+    document.getElementById("datos-acceso").hidden = true;
+    document.getElementById("sesion-activa").hidden = true;
     const formulario = document.getElementById("recuperar-contrasena");
     formulario.hidden = false;
     document.getElementById("btn-cambiar-contrasena").disabled = false;
@@ -241,6 +260,7 @@
   }
 
   if (enlaceRecuperacion) {
+    document.getElementById("datos-acceso").hidden = true;
     document.getElementById("recuperar-contrasena").hidden = false;
     document.getElementById("estado-auth").textContent = "Comprobando el enlace de recuperación...";
   }
@@ -303,8 +323,9 @@
       document.getElementById("password-nueva").value = "";
       document.getElementById("password-confirmacion").value = "";
       document.getElementById("recuperar-contrasena").hidden = true;
+      modoRecuperacion = false;
       window.history.replaceState(null, "", window.location.pathname);
-      estado.textContent = "Contraseña actualizada. Ya podés usar tu cuenta.";
+      estado.textContent = "Contraseña actualizada correctamente.";
       await iniciarAplicacion();
     } catch (error) {
       console.error(error);
@@ -348,7 +369,48 @@ async function iniciarSesion() {
     return;
   }
 
-  estado.textContent = "Sesión iniciada correctamente.";
+  document.getElementById("password").value = "";
+  estado.textContent = "";
+  await iniciarAplicacion();
+}
+
+async function actualizarEstadoAcceso() {
+  const formulario = document.getElementById("formulario-acceso");
+  const datosAcceso = document.getElementById("datos-acceso");
+  const bienvenida = document.getElementById("sesion-activa");
+  const { data: { user } } = await db.auth.getUser();
+
+  if (modoRecuperacion) {
+    formulario.hidden = false;
+    datosAcceso.hidden = true;
+    bienvenida.hidden = true;
+    return;
+  }
+
+  formulario.hidden = !!user;
+  bienvenida.hidden = !user;
+  datosAcceso.hidden = false;
+  if (!user) return;
+
+  const { data: jugador } = await db.from("jugadores")
+    .select("alias")
+    .eq("email", user.email)
+    .maybeSingle();
+  const alias = jugador?.alias?.trim() || user.email.split("@")[0];
+  document.getElementById("bienvenida-alias").textContent = alias;
+  document.getElementById("bienvenida-email").textContent = user.email;
+}
+
+async function cerrarSesion() {
+  const estado = document.getElementById("estado-auth");
+  const { error } = await db.auth.signOut();
+  if (error) {
+    estado.textContent = "No se pudo cerrar la sesión. Intentá nuevamente.";
+    return;
+  }
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
+  estado.textContent = "Sesión cerrada correctamente.";
   await iniciarAplicacion();
 }
 
@@ -1661,6 +1723,7 @@ async function sortearEquipos() {
   await cargarEquipos();
 }
 async function iniciarAplicacion() {
+  await actualizarEstadoAcceso();
   await cargarJugadores();
   await actualizarPerfilFoto();
   await cargarPartidos();

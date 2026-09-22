@@ -203,6 +203,48 @@ a {
   padding-top: 22px;
 }
 
+#formulario-acceso[hidden],
+#datos-acceso[hidden],
+.sesion-activa[hidden] { display: none; }
+
+.sesion-activa {
+  padding: 4px 2px 2px;
+  text-align: center;
+}
+
+.sesion-etiqueta {
+  margin: 0 0 8px;
+  color: var(--green);
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.sesion-activa h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(30px, 8vw, 42px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sesion-activa > p:not(.sesion-etiqueta) { margin: 12px auto 5px; color: var(--muted); line-height: 1.5; }
+.sesion-activa small { display: block; color: var(--sky); }
+.btn-cerrar-sesion {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: transparent;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .input-field {
   width: 100%;
   margin-top: 12px;
