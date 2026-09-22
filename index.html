@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260922-invitados">
 </head>
 
 <body>
@@ -144,11 +144,11 @@
 <button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
 <div id="invitados-control" class="invitados-control" style="display:none;">
-  <h3><i class="fa-solid fa-user-plus"></i> Traer un invitado</h3>
-  <p>Podés sumar amigos de fuera del grupo. Cada uno ocupa un lugar.</p>
+  <h3><i class="fa-solid fa-user-plus"></i> Traer invitados</h3>
+  <p>Sumá amigos de fuera del grupo. Cada uno cuenta para los 14.</p>
   <div class="invitados-formulario">
     <input id="alias-invitado" type="text" maxlength="40" autocomplete="off" placeholder="Nombre del invitado" aria-label="Nombre del invitado">
-    <button id="btn-agregar-invitado" type="button" onclick="agregarInvitado()">Agregar</button>
+    <button id="btn-agregar-invitado" type="button" onclick="agregarInvitado()">SUMAR</button>
   </div>
   <p id="estado-invitados" class="estado" role="status"></p>
 </div>
