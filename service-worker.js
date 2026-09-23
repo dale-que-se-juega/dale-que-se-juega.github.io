@@ -1,4 +1,4 @@
-const CACHE_NAME = "dale-que-se-juega-v2";
+const CACHE_NAME = "dale-que-se-juega-v3";
 const ARCHIVOS_APP = [
   "./",
   "./index.html",
@@ -6,7 +6,8 @@ const ARCHIVOS_APP = [
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./dale-que-se-juega.mp3"
 ];
 
 self.addEventListener("install", evento => {

@@ -27,9 +27,11 @@
 
 <body>
 
+  <audio id="audio-inicio" src="dale-que-se-juega.mp3" preload="auto"></audio>
+
   <header class="topbar">
-    <button class="icon-button" type="button" aria-label="Abrir menú">
-      <i class="fa-solid fa-bars"></i>
+    <button id="btn-sonido" class="icon-button" type="button" aria-label="Silenciar sonido" aria-pressed="false" title="Silenciar sonido">
+      <i class="fa-solid fa-volume-high"></i>
     </button>
     <div class="brand" aria-label="Dale que se juega">
       <div class="brand-main">DALE QUE <i class="fa-regular fa-futbol"></i></div>
@@ -280,6 +282,60 @@
   const SUPABASE_KEY = "sb_publishable_4J2txbexu0gyhnFvmGtDjQ_9Ic2vDN5";
 
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const audioInicio = document.getElementById("audio-inicio");
+  const botonSonido = document.getElementById("btn-sonido");
+  const CLAVE_SONIDO = "dale-que-se-juega-sonido-silenciado";
+  let audioPendiente = false;
+
+  function sonidoSilenciado() {
+    return window.localStorage.getItem(CLAVE_SONIDO) === "si";
+  }
+
+  function actualizarBotonSonido() {
+    const silenciado = sonidoSilenciado();
+    botonSonido.innerHTML = silenciado
+      ? '<i class="fa-solid fa-volume-xmark"></i>'
+      : '<i class="fa-solid fa-volume-high"></i>';
+    botonSonido.setAttribute("aria-pressed", String(silenciado));
+    botonSonido.setAttribute("aria-label", silenciado ? "Activar sonido" : "Silenciar sonido");
+    botonSonido.title = silenciado ? "Activar sonido" : "Silenciar sonido";
+  }
+
+  async function reproducirAudioInicio() {
+    if (sonidoSilenciado()) return;
+    audioInicio.currentTime = 0;
+    try {
+      await audioInicio.play();
+      audioPendiente = false;
+    } catch (error) {
+      audioPendiente = true;
+    }
+  }
+
+  botonSonido.addEventListener("click", () => {
+    const silenciar = !sonidoSilenciado();
+    window.localStorage.setItem(CLAVE_SONIDO, silenciar ? "si" : "no");
+    if (silenciar) {
+      audioInicio.pause();
+      audioInicio.currentTime = 0;
+      audioPendiente = false;
+    } else {
+      audioPendiente = true;
+      reproducirAudioInicio();
+    }
+    actualizarBotonSonido();
+  });
+
+  document.addEventListener("pointerdown", evento => {
+    if (evento.target.closest("#btn-sonido")) return;
+    if (audioPendiente) reproducirAudioInicio();
+  });
+
+  window.addEventListener("load", () => {
+    actualizarBotonSonido();
+    reproducirAudioInicio();
+  });
+
   const enlaceRecuperacion = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
   let recuperacionValidada = false;
   let modoRecuperacion = enlaceRecuperacion;
