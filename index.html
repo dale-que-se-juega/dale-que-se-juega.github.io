@@ -22,10 +22,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260923-pwa2">
+  <link rel="stylesheet" href="style.css?v=20260923-intro1">
 </head>
 
-<body>
+<body class="intro-activa">
+
+  <div id="pantalla-inicio" class="pantalla-inicio" aria-label="Presentación de Dale que se juega">
+    <button id="btn-iniciar-app" class="intro-accion" type="button">
+      <span class="intro-marca" aria-hidden="true">
+        <span class="intro-dale">DALE QUE</span>
+        <i class="fa-regular fa-futbol"></i>
+        <span class="intro-se-juega">SE JUEGA!</span>
+      </span>
+      <span id="texto-inicio" class="intro-pista">TOCÁ PARA ENTRAR</span>
+    </button>
+  </div>
 
   <audio id="audio-inicio" src="dale-que-se-juega.mp3" preload="auto"></audio>
 
@@ -284,8 +295,12 @@
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const audioInicio = document.getElementById("audio-inicio");
   const botonSonido = document.getElementById("btn-sonido");
+  const pantallaInicio = document.getElementById("pantalla-inicio");
+  const botonIniciarApp = document.getElementById("btn-iniciar-app");
+  const textoInicio = document.getElementById("texto-inicio");
   const CLAVE_SONIDO = "dale-que-se-juega-sonido-silenciado";
-  let audioPendiente = false;
+  let introIniciada = false;
+  let temporizadorIntro = null;
 
   function sonidoSilenciado() {
     return window.localStorage.getItem(CLAVE_SONIDO) === "si";
@@ -304,13 +319,48 @@
   async function reproducirAudioInicio() {
     if (sonidoSilenciado()) return;
     audioInicio.currentTime = 0;
+    await audioInicio.play();
+  }
+
+  function mostrarEntradaManual() {
+    introIniciada = false;
+    botonIniciarApp.disabled = false;
+    pantallaInicio.classList.remove("reproduciendo");
+    textoInicio.textContent = "TOCÁ PARA ENTRAR";
+  }
+
+  function abrirAplicacion() {
+    if (temporizadorIntro) window.clearTimeout(temporizadorIntro);
+    pantallaInicio.classList.add("saliendo");
+    document.body.classList.remove("intro-activa");
+    window.setTimeout(() => {
+      pantallaInicio.hidden = true;
+    }, 650);
+  }
+
+  async function iniciarPresentacion() {
+    if (introIniciada) return;
+    introIniciada = true;
+    botonIniciarApp.disabled = true;
+    textoInicio.textContent = "";
+
+    if (sonidoSilenciado()) {
+      pantallaInicio.classList.add("reproduciendo", "sin-sonido");
+      temporizadorIntro = window.setTimeout(abrirAplicacion, 1900);
+      return;
+    }
+
     try {
-      await audioInicio.play();
-      audioPendiente = false;
+      await reproducirAudioInicio();
+      pantallaInicio.classList.add("reproduciendo");
+      audioInicio.addEventListener("ended", abrirAplicacion, { once: true });
+      temporizadorIntro = window.setTimeout(abrirAplicacion, 4700);
     } catch (error) {
-      audioPendiente = true;
+      mostrarEntradaManual();
     }
   }
+
+  botonIniciarApp.addEventListener("click", iniciarPresentacion);
 
   botonSonido.addEventListener("click", () => {
     const silenciar = !sonidoSilenciado();
@@ -318,22 +368,15 @@
     if (silenciar) {
       audioInicio.pause();
       audioInicio.currentTime = 0;
-      audioPendiente = false;
     } else {
-      audioPendiente = true;
-      reproducirAudioInicio();
+      reproducirAudioInicio().catch(() => {});
     }
     actualizarBotonSonido();
   });
 
-  document.addEventListener("pointerdown", evento => {
-    if (evento.target.closest("#btn-sonido")) return;
-    if (audioPendiente) reproducirAudioInicio();
-  });
-
   window.addEventListener("load", () => {
     actualizarBotonSonido();
-    reproducirAudioInicio();
+    iniciarPresentacion();
   });
 
   const enlaceRecuperacion = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
