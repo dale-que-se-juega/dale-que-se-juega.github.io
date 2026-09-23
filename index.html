@@ -356,7 +356,7 @@
       await reproducirAudioInicio();
       pantallaInicio.classList.add("reproduciendo");
       audioInicio.addEventListener("ended", abrirAplicacion, { once: true });
-      temporizadorIntro = window.setTimeout(abrirAplicacion, 4700);
+      temporizadorIntro = window.setTimeout(abrirAplicacion, 6500);
     } catch (error) {
       mostrarEntradaManual();
     }
