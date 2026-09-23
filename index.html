@@ -556,6 +556,19 @@ async function iniciarSesion() {
   await iniciarAplicacion();
 }
 
+async function asegurarPerfilJugador() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return true;
+
+  const { error } = await db.rpc("asegurar_perfil_jugador");
+  if (!error) return true;
+
+  console.error(error);
+  document.getElementById("estado-auth").textContent =
+    "Ingresaste correctamente, pero no pudimos preparar tu perfil de jugador.";
+  return false;
+}
+
 async function actualizarEstadoAcceso() {
   const formulario = document.getElementById("formulario-acceso");
   const datosAcceso = document.getElementById("datos-acceso");
@@ -2043,6 +2056,7 @@ async function sortearEquipos() {
   await cargarEquipos();
 }
 async function iniciarAplicacion() {
+  await asegurarPerfilJugador();
   await actualizarEstadoAcceso();
   await cargarJugadores();
   await actualizarPerfilFoto();
