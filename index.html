@@ -1771,29 +1771,31 @@ async function compartirPartidoWhatsapp() {
   const enlaceApp = `${window.location.origin}${window.location.pathname}`;
 
   let mensaje =
-`⚽ *PRÓXIMO PARTIDO*
-📅 ${partido.dia.toUpperCase()} ${fechaFormateada}
-🕘 ${horaFormateada} HS`;
+`*FULBO MANAGER*
+
+*PRÓXIMO PARTIDO*
+*Día:* ${partido.dia.toUpperCase()} ${fechaFormateada}
+*Hora:* ${horaFormateada} HS`;
 
   if (partido.sorteo_confirmado && equipoA.length === 7 && equipoB.length === 7) {
     mensaje += `
 
-🟢 *EQUIPO A*
+*EQUIPO A*
 ${listar(equipoA)}
 
-🔴 *EQUIPO B*
+*EQUIPO B*
 ${listar(equipoB)}`;
 
     if (suplentes.length > 0) {
-      mensaje += `\n\n🟡 *SUPLENTES*\n${listar(suplentes)}`;
+      mensaje += `\n\n*SUPLENTES*\n${listar(suplentes)}`;
     }
   } else {
     const faltan = Math.max(14 - titulares.length, 0);
-    mensaje += `\n\n👥 *Anotados: ${titulares.length}/14*`;
+    mensaje += `\n\n*Anotados: ${titulares.length}/14*`;
     mensaje += faltan > 0
-      ? `\n📣 ${faltan === 1 ? "Falta 1 jugador" : `Faltan ${faltan} jugadores`}`
-      : "\n✅ Cupo completo";
-    mensaje += `\n\n👉 *Anotate acá:*\n${enlaceApp}`;
+      ? `\n${faltan === 1 ? "Falta 1 jugador" : `Faltan ${faltan} jugadores`}`
+      : "\nCupo completo";
+    mensaje += `\n\n*Anotate acá:*\n${enlaceApp}`;
   }
 
   mensaje += "\n\n_Buen fútbol, buenos amigos_";
