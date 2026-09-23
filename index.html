@@ -4,7 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Fulbo Manager</title>
+  <title>¡Dale que se juega!</title>
+  <meta name="application-name" content="¡Dale que se juega!">
+  <meta name="description" content="Organizá el próximo partido, anotate y compartí los equipos con tus amigos.">
+  <meta property="og:title" content="¡Dale que se juega!">
+  <meta property="og:description" content="Organizá el próximo partido con tu grupo de amigos.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jivisuara-coder.github.io/fulbo-manager/">
   <meta name="theme-color" content="#091115">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,9 +26,9 @@
     <button class="icon-button" type="button" aria-label="Abrir menú">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <div class="brand" aria-label="Fulbo Manager">
-      <div class="brand-main">FULB<i class="fa-regular fa-futbol"></i></div>
-      <div class="brand-sub">MANAGER</div>
+    <div class="brand" aria-label="Dale que se juega">
+      <div class="brand-main">DALE QUE <i class="fa-regular fa-futbol"></i></div>
+      <div class="brand-sub">SE JUEGA!</div>
     </div>
     <div class="profile-mark" aria-label="Perfil">
       <i class="fa-solid fa-user"></i>
@@ -1771,7 +1777,7 @@ async function compartirPartidoWhatsapp() {
   const enlaceApp = `${window.location.origin}${window.location.pathname}`;
 
   let mensaje =
-`*FULBO MANAGER*
+`*¡DALE QUE SE JUEGA!*
 
 *PRÓXIMO PARTIDO*
 *Día:* ${partido.dia.toUpperCase()} ${fechaFormateada}
