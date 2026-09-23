@@ -71,6 +71,7 @@
         id="email"
         class="input-field"
         placeholder="Tu email"
+        autocomplete="email"
       >
 
       <input
@@ -78,15 +79,16 @@
         id="password"
         class="input-field"
         placeholder="Tu contraseña"
+        autocomplete="current-password"
       >
 
       <div class="auth-actions">
-        <button class="btn-secondary" onclick="registrarse()">Registrarme</button>
+        <button id="btn-registrarse" class="btn-secondary" onclick="registrarse()">Registrarme</button>
         <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
       </div>
 
       <button type="button" class="auth-recuperar-enlace" onclick="solicitarRecuperacion()">¿Olvidaste tu contraseña?</button>
-      <p class="auth-ayuda-foto">Después de confirmar tu email, podés agregar tu foto al perfil.</p>
+      <p class="auth-ayuda-foto">Registrate una sola vez. Después podés agregar tu nombre y foto al perfil.</p>
     </div>
 
   <div id="recuperar-contrasena" class="auth-recuperar" hidden>
@@ -120,7 +122,7 @@
     </button>
   </div>
 
-  <p id="estado-auth"></p>
+  <p id="estado-auth" role="status" aria-live="polite"></p>
   <div id="perfil-foto" class="perfil-foto" hidden>
     <div class="perfil-foto-cabecera">
       <div id="perfil-avatar" class="avatar avatar-perfil">J</div>
@@ -472,23 +474,58 @@
     }
   }
 
-  async function registrarse() {
-  const email = document.getElementById("email").value;
+async function registrarse() {
+  const campoEmail = document.getElementById("email");
+  const email = campoEmail.value.trim();
   const password = document.getElementById("password").value;
   const estado = document.getElementById("estado-auth");
+  const boton = document.getElementById("btn-registrarse");
 
-  const { data, error } = await db.auth.signUp({
-    email,
-    password
-  });
-
-  if (error) {
-    estado.textContent = "Error: " + error.message;
+  if (!email || !campoEmail.checkValidity()) {
+    estado.textContent = "Escribí un email válido.";
+    campoEmail.focus();
+    return;
+  }
+  if (password.length < 8) {
+    estado.textContent = "La contraseña debe tener al menos 8 caracteres.";
     return;
   }
 
-  estado.textContent = "Registro realizado. Revisá tu email.";
-  if (data.session) await iniciarAplicacion();
+  boton.disabled = true;
+  estado.textContent = "Creando tu cuenta...";
+
+  try {
+    const { data, error } = await db.auth.signUp({ email, password });
+
+    if (error) {
+      const mensaje = error.message.toLowerCase();
+      if (mensaje.includes("already registered") || mensaje.includes("already been registered")) {
+        estado.textContent = "Ese email ya está registrado. Usá Iniciar sesión.";
+      } else if (mensaje.includes("password")) {
+        estado.textContent = "Elegí una contraseña de al menos 8 caracteres.";
+      } else if (mensaje.includes("email")) {
+        estado.textContent = "Revisá que el email esté bien escrito.";
+      } else {
+        estado.textContent = "No pudimos crear la cuenta. Intentá nuevamente.";
+      }
+      console.error(error);
+      return;
+    }
+
+    if (!data.session) {
+      estado.textContent = "La cuenta fue creada, pero todavía requiere confirmación por email.";
+      return;
+    }
+
+    document.getElementById("password").value = "";
+    estado.textContent = "¡Registro exitoso! Ya ingresaste a la aplicación.";
+    await iniciarAplicacion();
+  } catch (error) {
+    console.error(error);
+    estado.textContent = "No pudimos crear la cuenta. Revisá tu conexión e intentá nuevamente.";
+  } finally {
+    boton.disabled = false;
+  }
 }
 
 async function iniciarSesion() {
@@ -502,7 +539,15 @@ async function iniciarSesion() {
   });
 
   if (error) {
-    estado.textContent = "Error: " + error.message;
+    const mensaje = error.message.toLowerCase();
+    if (mensaje.includes("invalid login credentials")) {
+      estado.textContent = "El email o la contraseña son incorrectos.";
+    } else if (mensaje.includes("email not confirmed")) {
+      estado.textContent = "Esta cuenta todavía tiene pendiente la confirmación del email.";
+    } else {
+      estado.textContent = "No pudimos iniciar sesión. Intentá nuevamente.";
+    }
+    console.error(error);
     return;
   }
 
