@@ -137,6 +137,36 @@ a {
   letter-spacing: 5px;
 }
 
+.install-app-wrap {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 0 22px;
+  display: flex;
+  justify-content: center;
+}
+
+#btn-instalar-app {
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid rgba(43, 234, 120, 0.55);
+  border-radius: 999px;
+  background: rgba(43, 234, 120, 0.1);
+  color: var(--green);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  cursor: pointer;
+}
+
+#btn-instalar-app[hidden] {
+  display: none;
+}
+
+#btn-instalar-app i {
+  margin-right: 6px;
+}
+
 .app {
   width: min(100%, 460px);
   margin: 0 auto;

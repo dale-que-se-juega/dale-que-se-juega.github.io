@@ -12,12 +12,17 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jivisuara-coder.github.io/fulbo-manager/">
   <meta name="theme-color" content="#091115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dale que se juega">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260923-whatsapp">
+  <link rel="stylesheet" href="style.css?v=20260923-pwa">
 </head>
 
 <body>
@@ -36,6 +41,11 @@
     </div>
   </header>
   <p class="brand-claim">FÚTBOL ENTRE AMIGOS</p>
+  <div class="install-app-wrap">
+    <button id="btn-instalar-app" type="button" hidden>
+      <i class="fa-solid fa-mobile-screen-button"></i> INSTALAR APP
+    </button>
+  </div>
 
   <main class="app">
     <section id="acceso" class="card auth-card">
@@ -1898,6 +1908,46 @@ async function iniciarAplicacion() {
   await actualizarBotonesInscripcion();
   await configurarSorteo();
   await cargarEquipos();
+}
+
+let eventoInstalacion = null;
+const botonInstalarApp = document.getElementById("btn-instalar-app");
+const estaInstalada = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const esDispositivoIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+window.addEventListener("beforeinstallprompt", evento => {
+  evento.preventDefault();
+  eventoInstalacion = evento;
+  if (!estaInstalada) botonInstalarApp.hidden = false;
+});
+
+if (esDispositivoIOS && !estaInstalada) {
+  botonInstalarApp.hidden = false;
+}
+
+botonInstalarApp.addEventListener("click", async () => {
+  if (eventoInstalacion) {
+    eventoInstalacion.prompt();
+    await eventoInstalacion.userChoice;
+    eventoInstalacion = null;
+    botonInstalarApp.hidden = true;
+    return;
+  }
+
+  window.alert("En iPhone: abrí esta página con Safari, tocá Compartir y elegí Agregar a pantalla de inicio.");
+});
+
+window.addEventListener("appinstalled", () => {
+  botonInstalarApp.hidden = true;
+  eventoInstalacion = null;
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(error => {
+      console.error("No se pudo registrar la aplicación:", error);
+    });
+  });
 }
 
 iniciarAplicacion();
