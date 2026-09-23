@@ -128,7 +128,7 @@ a {
 
 .brand-claim {
   width: min(100%, 460px);
-  margin: 6px auto 22px;
+  margin: 6px auto 8px;
   color: var(--muted);
   text-align: center;
   font-family: var(--display);
@@ -139,7 +139,7 @@ a {
 
 .install-app-wrap {
   width: min(100%, 460px);
-  margin: 0 auto;
+  margin: 0 auto 14px;
   padding: 0 22px;
   display: flex;
   justify-content: center;

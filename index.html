@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260923-pwa">
+  <link rel="stylesheet" href="style.css?v=20260923-pwa2">
 </head>
 
 <body>
@@ -1912,16 +1912,21 @@ async function iniciarAplicacion() {
 
 let eventoInstalacion = null;
 const botonInstalarApp = document.getElementById("btn-instalar-app");
-const estaInstalada = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const modoAplicacion = window.matchMedia("(display-mode: standalone)");
+const estaInstalada = () =>
+  modoAplicacion.matches ||
+  window.navigator.standalone === true ||
+  window.localStorage.getItem("dale-que-se-juega-instalada") === "si";
 const esDispositivoIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 
 window.addEventListener("beforeinstallprompt", evento => {
   evento.preventDefault();
   eventoInstalacion = evento;
-  if (!estaInstalada) botonInstalarApp.hidden = false;
+  window.localStorage.removeItem("dale-que-se-juega-instalada");
+  if (!estaInstalada()) botonInstalarApp.hidden = false;
 });
 
-if (esDispositivoIOS && !estaInstalada) {
+if (esDispositivoIOS && !estaInstalada()) {
   botonInstalarApp.hidden = false;
 }
 
@@ -1938,8 +1943,17 @@ botonInstalarApp.addEventListener("click", async () => {
 });
 
 window.addEventListener("appinstalled", () => {
+  window.localStorage.setItem("dale-que-se-juega-instalada", "si");
   botonInstalarApp.hidden = true;
   eventoInstalacion = null;
+});
+
+modoAplicacion.addEventListener?.("change", () => {
+  if (estaInstalada()) botonInstalarApp.hidden = true;
+});
+
+window.addEventListener("pageshow", () => {
+  if (estaInstalada()) botonInstalarApp.hidden = true;
 });
 
 if ("serviceWorker" in navigator) {
