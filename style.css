@@ -1062,6 +1062,10 @@ a {
   font-size: 19px;
 }
 
+#btn-compartir-partido {
+  margin-top: 14px;
+}
+
 .equipos-espera {
   min-height: 130px;
   margin-top: 18px;

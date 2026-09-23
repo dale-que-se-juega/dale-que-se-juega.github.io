@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260922-admin-layout">
+  <link rel="stylesheet" href="style.css?v=20260923-whatsapp">
 </head>
 
 <body>
@@ -196,6 +196,15 @@
   <button id="btn-anotarme" class="btn-primary signup-button" onclick="anotarme()"><i class="fa-regular fa-futbol"></i> ANOTARME</button>
 <button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
 <p id="estado-inscripcion" class="estado"></p>
+<button
+  id="btn-compartir-partido"
+  type="button"
+  class="btn-whatsapp"
+  onclick="compartirPartidoWhatsapp()"
+  style="display:none;"
+>
+  <i class="fa-brands fa-whatsapp"></i> COMPARTIR PARTIDO
+</button>
 <div id="invitados-control" class="invitados-control" style="display:none;">
   <h3><i class="fa-solid fa-user-plus"></i> Traer invitados</h3>
   <p>Sumá amigos de fuera del grupo. Cada uno cuenta para los 14.</p>
@@ -802,6 +811,7 @@ if (!data || data.length === 0) {
   document.getElementById("cupo-partido").style.display = "none";
   document.getElementById("btn-anotarme").style.display = "none";
   document.getElementById("btn-bajarme").style.display = "none";
+  document.getElementById("btn-compartir-partido").style.display = "none";
 
   const esAdmin = await usuarioActualEsAdmin();
   document.getElementById("creador-partido").style.display = esAdmin ? "block" : "none";
@@ -812,6 +822,7 @@ if (!data || data.length === 0) {
 
 const partido = data[0];
 partidoActualId = partido.id;
+document.getElementById("btn-compartir-partido").style.display = "block";
 const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
 const fechaFormateada = fechaPartido
   .toLocaleDateString("es-AR", {
@@ -1555,7 +1566,7 @@ async function cargarEquipos() {
               id="btn-compartir-whatsapp"
               type="button"
               class="btn-whatsapp"
-              onclick="compartirEquiposWhatsapp()"
+              onclick="compartirPartidoWhatsapp()"
             >
               <i class="fa-brands fa-whatsapp"></i>
               COMPARTIR POR WHATSAPP
@@ -1712,11 +1723,11 @@ async function confirmarEquipos() {
   await cargarEquipos();
 }
 
-async function compartirEquiposWhatsapp() {
-  const estadoSorteo = document.getElementById("estado-sorteo");
+async function compartirPartidoWhatsapp() {
+  const estado = document.getElementById("estado-inscripcion");
 
-  if (!partidoActualId || !(await usuarioActualEsAdmin())) {
-    estadoSorteo.textContent = "Solo el administrador puede compartir los equipos.";
+  if (!partidoActualId) {
+    estado.textContent = "No hay un partido abierto para compartir.";
     return;
   }
 
@@ -1726,18 +1737,19 @@ async function compartirEquiposWhatsapp() {
     .eq("id", partidoActualId)
     .maybeSingle();
 
-  if (errorPartido || !partido || !partido.sorteo_confirmado) {
-    estadoSorteo.textContent = "Primero confirmá los equipos para compartirlos.";
+  if (errorPartido || !partido) {
+    estado.textContent = "No se pudo preparar el partido para compartir.";
     return;
   }
 
   const { data: inscripciones, error } = await obtenerParticipantes();
 
   if (error) {
-    estadoSorteo.textContent = "No se pudieron preparar los equipos para compartir.";
+    estado.textContent = "No se pudo preparar la lista para compartir.";
     return;
   }
 
+  const titulares = inscripciones.filter(jugador => jugador.estado === "titular");
   const equipoA = inscripciones.filter(jugador =>
     jugador.estado === "titular" && jugador.equipo === "A"
   );
@@ -1756,11 +1768,15 @@ async function compartirEquiposWhatsapp() {
   const listar = lista => lista
     .map((jugador, indice) => `${indice + 1}. ${jugador.alias}${jugador.tipo === "invitado" ? " (invitado)" : ""}`)
     .join("\n");
+  const enlaceApp = `${window.location.origin}${window.location.pathname}`;
 
   let mensaje =
-`⚽ *FULBO MANAGER*
+`⚽ *PRÓXIMO PARTIDO*
 📅 ${partido.dia.toUpperCase()} ${fechaFormateada}
-🕘 ${horaFormateada} HS
+🕘 ${horaFormateada} HS`;
+
+  if (partido.sorteo_confirmado && equipoA.length === 7 && equipoB.length === 7) {
+    mensaje += `
 
 🟢 *EQUIPO A*
 ${listar(equipoA)}
@@ -1768,8 +1784,16 @@ ${listar(equipoA)}
 🔴 *EQUIPO B*
 ${listar(equipoB)}`;
 
-  if (suplentes.length > 0) {
-    mensaje += `\n\n🟡 *SUPLENTES*\n${listar(suplentes)}`;
+    if (suplentes.length > 0) {
+      mensaje += `\n\n🟡 *SUPLENTES*\n${listar(suplentes)}`;
+    }
+  } else {
+    const faltan = Math.max(14 - titulares.length, 0);
+    mensaje += `\n\n👥 *Anotados: ${titulares.length}/14*`;
+    mensaje += faltan > 0
+      ? `\n📣 ${faltan === 1 ? "Falta 1 jugador" : `Faltan ${faltan} jugadores`}`
+      : "\n✅ Cupo completo";
+    mensaje += `\n\n👉 *Anotate acá:*\n${enlaceApp}`;
   }
 
   mensaje += "\n\n_Buen fútbol, buenos amigos_";
