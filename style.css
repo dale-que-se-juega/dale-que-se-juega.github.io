@@ -439,6 +439,36 @@ body.intro-activa {
   box-shadow: 0 0 0 3px rgba(43, 234, 120, 0.12);
 }
 
+.password-field {
+  position: relative;
+  margin-top: 12px;
+}
+
+.password-field .input-field {
+  margin-top: 0;
+  padding-right: 52px;
+}
+
+.btn-password-visible {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  bottom: 4px;
+  width: 44px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--sky);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.btn-password-visible:hover,
+.btn-password-visible:focus-visible {
+  background: rgba(91, 214, 255, 0.10);
+  outline: none;
+}
+
 .auth-actions {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -466,7 +496,8 @@ body.intro-activa {
 .auth-recuperar[hidden] { display: none; }
 .auth-recuperar h3 { margin: 0; font-family: var(--display); text-transform: uppercase; }
 .auth-recuperar p { margin: 5px 0 12px; color: var(--muted); font-size: 13px; }
-.auth-recuperar .input-field { margin-bottom: 10px; }
+.auth-recuperar .password-field { margin-top: 10px; }
+.auth-recuperar .password-field .input-field { margin-bottom: 0; }
 .auth-recuperar .btn-primary { width: 100%; }
 .auth-recuperar .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 

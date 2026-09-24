@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260923-intro1">
+  <link rel="stylesheet" href="style.css?v=20260924-password1">
 </head>
 
 <body class="intro-activa">
@@ -74,13 +74,18 @@
         autocomplete="email"
       >
 
-      <input
-        type="password"
-        id="password"
-        class="input-field"
-        placeholder="Tu contraseña"
-        autocomplete="current-password"
-      >
+      <div class="password-field">
+        <input
+          type="password"
+          id="password"
+          class="input-field"
+          placeholder="Tu contraseña"
+          autocomplete="current-password"
+        >
+        <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password', this)" aria-label="Mostrar contraseña" aria-pressed="false">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+      </div>
 
       <div class="auth-actions">
         <button id="btn-registrarse" class="btn-secondary" onclick="registrarse()">Registrarme</button>
@@ -94,8 +99,18 @@
   <div id="recuperar-contrasena" class="auth-recuperar" hidden>
     <h3>Elegí una nueva contraseña</h3>
     <p>Escribila dos veces para confirmar el cambio.</p>
-    <input id="password-nueva" type="password" class="input-field" placeholder="Nueva contraseña" autocomplete="new-password" aria-label="Nueva contraseña">
-    <input id="password-confirmacion" type="password" class="input-field" placeholder="Repetí la contraseña" autocomplete="new-password" aria-label="Repetí la contraseña">
+    <div class="password-field">
+      <input id="password-nueva" type="password" class="input-field" placeholder="Nueva contraseña" autocomplete="new-password" aria-label="Nueva contraseña">
+      <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password-nueva', this)" aria-label="Mostrar nueva contraseña" aria-pressed="false">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+    </div>
+    <div class="password-field">
+      <input id="password-confirmacion" type="password" class="input-field" placeholder="Repetí la contraseña" autocomplete="new-password" aria-label="Repetí la contraseña">
+      <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password-confirmacion', this)" aria-label="Mostrar contraseña repetida" aria-pressed="false">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+    </div>
     <button id="btn-cambiar-contrasena" type="button" class="btn-primary" onclick="cambiarContrasena()" disabled>GUARDAR CONTRASEÑA</button>
   </div>
   </div>
@@ -385,6 +400,18 @@
   let recuperacionValidada = false;
   let modoRecuperacion = enlaceRecuperacion;
   let partidoActualId = null;
+
+  function alternarVisibilidadPassword(campoId, boton) {
+    const campo = document.getElementById(campoId);
+    const mostrar = campo.type === "password";
+    campo.type = mostrar ? "text" : "password";
+    boton.innerHTML = mostrar
+      ? '<i class="fa-solid fa-eye-slash"></i>'
+      : '<i class="fa-solid fa-eye"></i>';
+    boton.setAttribute("aria-pressed", String(mostrar));
+    boton.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+  }
+
   function mostrarCambioContrasena() {
     recuperacionValidada = true;
     modoRecuperacion = true;
