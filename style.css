@@ -1295,27 +1295,67 @@ body.intro-activa {
   margin-bottom: 30px;
 }
 
+.players-heading {
+  align-items: center;
+}
+
+.btn-ver-jugadores {
+  padding: 7px 9px;
+  border: 1px solid rgba(91, 214, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(91, 214, 255, 0.08);
+  color: var(--sky);
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-ver-jugadores i {
+  margin-left: 3px;
+  transition: transform 0.2s ease;
+}
+
+.btn-ver-jugadores.abierto i {
+  transform: rotate(180deg);
+}
+
+#lista-jugadores[hidden] {
+  display: none;
+}
+
 #lista-jugadores .jugador {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   column-gap: 12px;
   row-gap: 0;
   align-items: center;
 }
 
 #lista-jugadores .gestion-jugador {
-  grid-column: 1 / -1;
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .jugador-retirado { opacity: 0.58; }
-.gestion-jugador { width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.gestion-jugador { width: auto; margin: 0; padding: 0; border: 0; }
 .gestion-jugador summary {
+  padding: 7px 9px;
+  border: 1px solid rgba(91, 214, 255, 0.3);
+  border-radius: 9px;
+  background: rgba(91, 214, 255, 0.06);
   color: var(--sky);
   font-family: var(--display);
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  list-style-position: inside;
+  list-style: none;
 }
+.gestion-jugador summary::-webkit-details-marker { display: none; }
+.gestion-jugador summary::before { content: "\25B6"; margin-right: 5px; font-size: 9px; }
+.gestion-jugador[open] { grid-column: 1 / -1 !important; grid-row: 2 !important; width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.gestion-jugador[open] summary { display: inline-block; }
+.gestion-jugador[open] summary::before { content: "\25BC"; }
 .gestion-jugador label { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
 .gestion-jugador .input-field { margin: 6px 0 8px; }
 .gestion-jugador button {

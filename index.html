@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20260924-password1">
+  <link rel="stylesheet" href="style.css?v=20260924-jugadores1">
 </head>
 
 <body class="intro-activa">
@@ -292,12 +292,17 @@
 
   <div id="equipos-resultado"></div>
   </div>
-</section>
+    </section>
     <section id="jugadores" class="card players-card">
-      <h2 class="section-title">Jugadores</h2>
+      <div class="section-heading players-heading">
+        <h2 class="section-title">Jugadores</h2>
+        <button id="btn-ver-jugadores" class="btn-ver-jugadores" type="button" onclick="alternarListaJugadores()" aria-expanded="false" aria-controls="lista-jugadores">
+          VER JUGADORES <i class="fa-solid fa-chevron-down"></i>
+        </button>
+      </div>
       <p id="descripcion-jugadores" class="section-description">Jugadores que forman parte del grupo.</p>
       <p id="estado-gestion-jugadores" class="estado" role="status"></p>
-      <div id="lista-jugadores"></div>
+      <div id="lista-jugadores" hidden></div>
     </section>
   </main>
   <footer class="app-footer">
@@ -869,6 +874,24 @@ async function quitarFotoPerfil() {
   }
 }
 
+  function alternarListaJugadores() {
+    const contenedor = document.getElementById("lista-jugadores");
+    const boton = document.getElementById("btn-ver-jugadores");
+    const abrir = contenedor.hidden;
+    contenedor.hidden = !abrir;
+    boton.setAttribute("aria-expanded", String(abrir));
+    boton.classList.toggle("abierto", abrir);
+    actualizarBotonListaJugadores();
+  }
+
+  function actualizarBotonListaJugadores(cantidad) {
+    const contenedor = document.getElementById("lista-jugadores");
+    const boton = document.getElementById("btn-ver-jugadores");
+    const total = cantidad ?? Number(boton.dataset.cantidad || 0);
+    boton.dataset.cantidad = String(total);
+    boton.innerHTML = `${contenedor.hidden ? "VER" : "OCULTAR"} JUGADORES (${total}) <i class="fa-solid fa-chevron-down"></i>`;
+  }
+
   async function cargarJugadores() {
   const esAdmin = await usuarioActualEsAdmin();
   const consulta = esAdmin
@@ -889,6 +912,7 @@ async function quitarFotoPerfil() {
   }
 
   const jugadores = Array.isArray(data) ? data : [];
+  actualizarBotonListaJugadores(jugadores.length);
   contenedor.innerHTML = jugadores.map(jugador => `
   <div class="jugador ${jugador.activo === false ? "jugador-retirado" : ""}">
 

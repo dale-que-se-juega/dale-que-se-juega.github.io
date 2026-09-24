@@ -1,4 +1,4 @@
-const CACHE_NAME = "dale-que-se-juega-v8";
+const CACHE_NAME = "dale-que-se-juega-v9";
 const ARCHIVOS_APP = [
   "./",
   "./index.html",
