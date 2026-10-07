@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>¡Dale que se juega!</title>
+  <meta name="application-name" content="¡Dale que se juega!">
+  <meta name="description" content="Organizá el próximo partido, anotate y compartí los equipos con tus amigos.">
+  <meta property="og:title" content="¡Dale que se juega!">
+  <meta property="og:description" content="Organizá el próximo partido con tu grupo de amigos.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://dale-que-se-juega.github.io/">
+  <meta name="theme-color" content="#091115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dale que se juega">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=20260924-jugadores1">
+</head>
+
+<body class="intro-activa">
+
+  <div id="pantalla-inicio" class="pantalla-inicio" aria-label="Presentación de Dale que se juega">
+    <button id="btn-iniciar-app" class="intro-accion" type="button">
+      <span class="intro-marca" aria-hidden="true">
+        <span class="intro-dale">DALE QUE</span>
+        <i class="fa-regular fa-futbol"></i>
+        <span class="intro-se-juega">SE JUEGA!</span>
+      </span>
+      <span id="texto-inicio" class="intro-pista">TOCÁ PARA ENTRAR</span>
+    </button>
+  </div>
+
+  <audio id="audio-inicio" src="dale-que-se-juega.mp3" preload="auto"></audio>
+
+  <header class="topbar">
+    <button id="btn-sonido" class="icon-button" type="button" aria-label="Silenciar sonido" aria-pressed="false" title="Silenciar sonido">
+      <i class="fa-solid fa-volume-high"></i>
+    </button>
+    <div class="brand" aria-label="Dale que se juega">
+      <div class="brand-main">DALE QUE <i class="fa-regular fa-futbol"></i></div>
+      <div class="brand-sub">SE JUEGA!</div>
+    </div>
+    <div class="profile-mark" aria-label="Perfil">
+      <i class="fa-solid fa-user"></i>
+      <span></span>
+    </div>
+  </header>
+  <p class="brand-claim">FÚTBOL ENTRE AMIGOS</p>
+  <div class="install-app-wrap">
+    <button id="btn-instalar-app" type="button" hidden>
+      <i class="fa-solid fa-mobile-screen-button"></i> INSTALAR APP
+    </button>
+  </div>
+
+  <main class="app">
+    <section id="acceso" class="card auth-card">
+  <div id="formulario-acceso">
+    <div id="datos-acceso">
+      <h2 class="section-title"><i class="fa-solid fa-arrow-right-to-bracket"></i> Ingresar</h2>
+
+      <input
+        type="email"
+        id="email"
+        class="input-field"
+        placeholder="Tu email"
+        autocomplete="email"
+      >
+
+      <div class="password-field">
+        <input
+          type="password"
+          id="password"
+          class="input-field"
+          placeholder="Tu contraseña"
+          autocomplete="current-password"
+        >
+        <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password', this)" aria-label="Mostrar contraseña" aria-pressed="false">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+      </div>
+
+      <div class="auth-actions">
+        <button id="btn-registrarse" class="btn-secondary" onclick="registrarse()">Registrarme</button>
+        <button class="btn-primary" onclick="iniciarSesion()">Iniciar sesión</button>
+      </div>
+
+      <button type="button" class="auth-recuperar-enlace" onclick="solicitarRecuperacion()">¿Olvidaste tu contraseña?</button>
+      <p class="auth-ayuda-foto">Registrate una sola vez. Después podés agregar tu nombre y foto al perfil.</p>
+    </div>
+
+  <div id="recuperar-contrasena" class="auth-recuperar" hidden>
+    <h3>Elegí una nueva contraseña</h3>
+    <p>Escribila dos veces para confirmar el cambio.</p>
+    <div class="password-field">
+      <input id="password-nueva" type="password" class="input-field" placeholder="Nueva contraseña" autocomplete="new-password" aria-label="Nueva contraseña">
+      <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password-nueva', this)" aria-label="Mostrar nueva contraseña" aria-pressed="false">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+    </div>
+    <div class="password-field">
+      <input id="password-confirmacion" type="password" class="input-field" placeholder="Repetí la contraseña" autocomplete="new-password" aria-label="Repetí la contraseña">
+      <button type="button" class="btn-password-visible" onclick="alternarVisibilidadPassword('password-confirmacion', this)" aria-label="Mostrar contraseña repetida" aria-pressed="false">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+    </div>
+    <button id="btn-cambiar-contrasena" type="button" class="btn-primary" onclick="cambiarContrasena()" disabled>GUARDAR CONTRASEÑA</button>
+  </div>
+  </div>
+
+  <div id="sesion-activa" class="sesion-activa" hidden>
+    <p class="sesion-etiqueta"><i class="fa-solid fa-circle-check"></i> SESIÓN ACTIVA</p>
+    <h2>¡Bienvenido, <span id="bienvenida-alias">jugador</span>!</h2>
+    <p id="bienvenida-mensaje">Ya podés anotarte al próximo partido y administrar tu foto.</p>
+    <small id="bienvenida-email"></small>
+    <button type="button" class="btn-editar-alias" onclick="mostrarEditorAlias()">
+      <i class="fa-solid fa-pen"></i> EDITAR NOMBRE
+    </button>
+    <div id="editor-alias" class="editor-alias" hidden>
+      <label for="nuevo-alias">Nombre que verán los demás</label>
+      <input id="nuevo-alias" type="text" class="input-field" maxlength="40" autocomplete="nickname" placeholder="Tu nombre o apodo">
+      <div class="editor-alias-acciones">
+        <button type="button" class="btn-secondary" onclick="cancelarEditorAlias()">CANCELAR</button>
+        <button id="btn-guardar-alias" type="button" class="btn-primary" onclick="guardarAlias()">GUARDAR</button>
+      </div>
+      <p id="estado-alias" class="estado" role="status"></p>
+    </div>
+    <button type="button" class="btn-cerrar-sesion" onclick="cerrarSesion()">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i> CERRAR SESIÓN
+    </button>
+  </div>
+
+  <p id="estado-auth" role="status" aria-live="polite"></p>
+  <div id="perfil-foto" class="perfil-foto" hidden>
+    <div class="perfil-foto-cabecera">
+      <div id="perfil-avatar" class="avatar avatar-perfil">J</div>
+      <div>
+        <h3>Mi foto</h3>
+        <p>Opcional. Se mostrará junto a tu nombre en los partidos.</p>
+      </div>
+    </div>
+    <div class="perfil-foto-acciones">
+      <label for="archivo-foto" class="selector-foto">ELEGIR FOTO</label>
+      <input id="archivo-foto" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Elegir foto de perfil" onchange="mostrarFotoSeleccionada()">
+      <button id="btn-guardar-foto" type="button" onclick="guardarFotoPerfil()">GUARDAR FOTO</button>
+      <button id="btn-quitar-foto" type="button" onclick="quitarFotoPerfil()" hidden>QUITAR FOTO</button>
+    </div>
+    <p id="estado-foto" class="estado" role="status"></p>
+  </div>
+</section>
+    <section id="proximo-partido" class="card match-card">
+
+  <p class="card-title"><span></span> Próximo partido</p>
+
+  <div id="datos-partido">
+    <p>Cargando partido...</p>
+  </div>
+  <div id="acciones-admin-partido" class="acciones-admin-partido" style="display:none;">
+    <button
+      id="btn-editar-partido"
+      type="button"
+      class="btn-admin-partido"
+      onclick="mostrarEditorPartido()"
+    >
+      <i class="fa-solid fa-calendar-days"></i> CAMBIAR FECHA Y HORA
+    </button>
+    <button
+      id="btn-finalizar-partido"
+      type="button"
+      class="btn-finalizar-partido"
+      onclick="finalizarPartido()"
+    >
+      <i class="fa-solid fa-flag-checkered"></i> FINALIZAR PARTIDO
+    </button>
+  </div>
+
+  <div id="editor-partido" class="editor-partido" style="display:none;">
+    <div class="editor-partido-grid">
+      <label>
+        Fecha
+        <input id="partido-fecha" type="date" class="input-field">
+      </label>
+      <label>
+        Hora
+        <input id="partido-hora" type="time" class="input-field" value="21:00">
+      </label>
+    </div>
+    <p class="editor-ayuda">Los partidos habituales son martes y viernes a las 21:00.</p>
+    <div class="editor-partido-acciones">
+      <button type="button" class="btn-secondary" onclick="ocultarEditorPartido()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="guardarCambiosPartido()">Guardar cambios</button>
+    </div>
+    <p id="estado-editor-partido" class="estado"></p>
+  </div>
+
+  <div id="creador-partido" class="editor-partido" style="display:none;">
+    <h3>Crear próximo partido</h3>
+    <div class="editor-partido-grid">
+      <label>
+        Fecha
+        <input id="nuevo-partido-fecha" type="date" class="input-field">
+      </label>
+      <label>
+        Hora
+        <input id="nuevo-partido-hora" type="time" class="input-field" value="21:00">
+      </label>
+    </div>
+    <p class="editor-ayuda">Elegí el próximo martes o viernes. El horario habitual es 21:00.</p>
+    <button type="button" class="btn-primary btn-crear-partido" onclick="crearProximoPartido()">
+      <i class="fa-solid fa-plus"></i> CREAR PARTIDO
+    </button>
+    <p id="estado-creador-partido" class="estado"></p>
+  </div>
+
+      <div id="cupo-partido" class="cupo-card">
+
+  <div class="cupo-header">
+    <span class="card-title">Jugadores</span>
+    <span class="cupo-numero" id="cupo-numero">0 / 14</span>
+  </div>
+
+  <div class="barra">
+    <div
+      class="barra-progreso"
+      id="barra-cupo"
+      style="width: 0%;">
+    </div>
+  </div>
+
+  <p class="lugares" id="lugares-disponibles">
+    14 lugares disponibles
+  </p>
+
+</div>
+  <button id="btn-anotarme" class="btn-primary signup-button" onclick="anotarme()"><i class="fa-regular fa-futbol"></i> ANOTARME</button>
+<button id="btn-bajarme" class="btn-secondary" onclick="bajarme()" style="display:none;">Bajarme del partido</button>
+<p id="estado-inscripcion" class="estado"></p>
+<button
+  id="btn-compartir-partido"
+  type="button"
+  class="btn-whatsapp"
+  onclick="compartirPartidoWhatsapp()"
+  style="display:none;"
+>
+  <i class="fa-brands fa-whatsapp"></i> COMPARTIR PARTIDO
+</button>
+<div id="invitados-control" class="invitados-control" style="display:none;">
+  <h3><i class="fa-solid fa-user-plus"></i> Traer invitados</h3>
+  <p>Sumá amigos de fuera del grupo. Cada uno cuenta para los 14.</p>
+  <div class="invitados-formulario">
+    <input id="alias-invitado" type="text" maxlength="40" autocomplete="off" placeholder="Nombre del invitado" aria-label="Nombre del invitado">
+    <button id="btn-agregar-invitado" type="button" onclick="agregarInvitado()">SUMAR</button>
+  </div>
+  <p id="estado-invitados" class="estado" role="status"></p>
+</div>
+</section>
+    <section id="inscriptos" class="card">
+  <div class="section-heading">
+    <h2 class="section-title"><i class="fa-solid fa-user-group"></i> Inscriptos</h2>
+    <a href="#jugadores">Ver todos <i class="fa-solid fa-chevron-right"></i></a>
+  </div>
+      <p id="contador-inscriptos"></p>
+  <div id="lista-inscriptos">
+    <p>Cargando inscriptos...</p>
+  </div>
+  
+</section>
+    <section id="sorteo" class="card">
+  <div class="sorteo-icon"><i class="fa-solid fa-shuffle"></i></div>
+  <div class="sorteo-copy">
+  <h2 class="section-title">Sorteo de equipos</h2>
+
+  <p id="estado-sorteo" class="estado">
+    El sorteo se habilita cuando haya 14 titulares.
+  </p>
+
+  <button
+    id="btn-sortear"
+    class="btn-primary"
+    onclick="sortearEquipos()"
+    style="display:none;"
+  >
+    <i class="fa-solid fa-dice"></i> SORTEAR EQUIPOS
+  </button>
+
+  <div id="equipos-resultado"></div>
+  </div>
+    </section>
+    <section id="jugadores" class="card players-card">
+      <div class="section-heading players-heading">
+        <h2 class="section-title">Jugadores</h2>
+        <button id="btn-ver-jugadores" class="btn-ver-jugadores" type="button" onclick="alternarListaJugadores()" aria-expanded="false" aria-controls="lista-jugadores">
+          VER JUGADORES <i class="fa-solid fa-chevron-down"></i>
+        </button>
+      </div>
+      <p id="descripcion-jugadores" class="section-description">Jugadores que forman parte del grupo.</p>
+      <p id="estado-gestion-jugadores" class="estado" role="status"></p>
+      <div id="lista-jugadores" hidden></div>
+    </section>
+  </main>
+  <footer class="app-footer">
+    <span>BUEN FÚTBOL</span>
+    <strong>BUENOS AMIGOS</strong>
+    <i></i>
+  </footer>
+<script>
+  const SUPABASE_URL = "https://xwdslmdvgicenqqbrqev.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_4J2txbexu0gyhnFvmGtDjQ_9Ic2vDN5";
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const audioInicio = document.getElementById("audio-inicio");
+  const botonSonido = document.getElementById("btn-sonido");
+  const pantallaInicio = document.getElementById("pantalla-inicio");
+  const botonIniciarApp = document.getElementById("btn-iniciar-app");
+  const textoInicio = document.getElementById("texto-inicio");
+  const CLAVE_SONIDO = "dale-que-se-juega-sonido-silenciado";
+  let introIniciada = false;
+  let temporizadorIntro = null;
+
+  function sonidoSilenciado() {
+    return window.localStorage.getItem(CLAVE_SONIDO) === "si";
+  }
+
+  function actualizarBotonSonido() {
+    const silenciado = sonidoSilenciado();
+    botonSonido.innerHTML = silenciado
+      ? '<i class="fa-solid fa-volume-xmark"></i>'
+      : '<i class="fa-solid fa-volume-high"></i>';
+    botonSonido.setAttribute("aria-pressed", String(silenciado));
+    botonSonido.setAttribute("aria-label", silenciado ? "Activar sonido" : "Silenciar sonido");
+    botonSonido.title = silenciado ? "Activar sonido" : "Silenciar sonido";
+  }
+
+  async function reproducirAudioInicio() {
+    if (sonidoSilenciado()) return;
+    audioInicio.currentTime = 0;
+    await audioInicio.play();
+  }
+
+  function mostrarEntradaManual() {
+    introIniciada = false;
+    botonIniciarApp.disabled = false;
+    pantallaInicio.classList.remove("reproduciendo");
+    textoInicio.textContent = "TOCÁ PARA ENTRAR";
+  }
+
+  function abrirAplicacion() {
+    if (temporizadorIntro) window.clearTimeout(temporizadorIntro);
+    pantallaInicio.classList.add("saliendo");
+    document.body.classList.remove("intro-activa");
+    window.setTimeout(() => {
+      pantallaInicio.hidden = true;
+    }, 650);
+  }
+
+  async function iniciarPresentacion() {
+    if (introIniciada) return;
+    introIniciada = true;
+    botonIniciarApp.disabled = true;
+    textoInicio.textContent = "";
+
+    if (sonidoSilenciado()) {
+      pantallaInicio.classList.add("reproduciendo", "sin-sonido");
+      temporizadorIntro = window.setTimeout(abrirAplicacion, 1900);
+      return;
+    }
+
+    try {
+      await reproducirAudioInicio();
+      pantallaInicio.classList.add("reproduciendo");
+      audioInicio.addEventListener("ended", abrirAplicacion, { once: true });
+      temporizadorIntro = window.setTimeout(abrirAplicacion, 6500);
+    } catch (error) {
+      mostrarEntradaManual();
+    }
+  }
+
+  botonIniciarApp.addEventListener("click", iniciarPresentacion);
+
+  botonSonido.addEventListener("click", () => {
+    const silenciar = !sonidoSilenciado();
+    window.localStorage.setItem(CLAVE_SONIDO, silenciar ? "si" : "no");
+    if (silenciar) {
+      audioInicio.pause();
+      audioInicio.currentTime = 0;
+    } else {
+      reproducirAudioInicio().catch(() => {});
+    }
+    actualizarBotonSonido();
+  });
+
+  window.addEventListener("load", () => {
+    actualizarBotonSonido();
+    iniciarPresentacion();
+  });
+
+  const enlaceRecuperacion = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+  let recuperacionValidada = false;
+  let modoRecuperacion = enlaceRecuperacion;
+  let partidoActualId = null;
+
+  function alternarVisibilidadPassword(campoId, boton) {
+    const campo = document.getElementById(campoId);
+    const mostrar = campo.type === "password";
+    campo.type = mostrar ? "text" : "password";
+    boton.innerHTML = mostrar
+      ? '<i class="fa-solid fa-eye-slash"></i>'
+      : '<i class="fa-solid fa-eye"></i>';
+    boton.setAttribute("aria-pressed", String(mostrar));
+    boton.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+  }
+
+  function mostrarCambioContrasena() {
+    recuperacionValidada = true;
+    modoRecuperacion = true;
+    document.getElementById("formulario-acceso").hidden = false;
+    document.getElementById("datos-acceso").hidden = true;
+    document.getElementById("sesion-activa").hidden = true;
+    const formulario = document.getElementById("recuperar-contrasena");
+    formulario.hidden = false;
+    document.getElementById("btn-cambiar-contrasena").disabled = false;
+    document.getElementById("estado-auth").textContent = "Elegí una contraseña nueva para tu cuenta.";
+    document.getElementById("acceso").scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (enlaceRecuperacion) {
+    document.getElementById("datos-acceso").hidden = true;
+    document.getElementById("recuperar-contrasena").hidden = false;
+    document.getElementById("estado-auth").textContent = "Comprobando el enlace de recuperación...";
+  }
+  db.auth.onAuthStateChange(event => {
+    if (event === "PASSWORD_RECOVERY") mostrarCambioContrasena();
+  });
+
+  async function solicitarRecuperacion() {
+    const campo = document.getElementById("email");
+    const estado = document.getElementById("estado-auth");
+    const email = campo.value.trim();
+    if (!email || !campo.checkValidity()) {
+      estado.textContent = "Escribí tu email arriba para enviarte el enlace de recuperación.";
+      campo.focus();
+      return;
+    }
+
+    estado.textContent = "Enviando enlace de recuperación...";
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}`
+    });
+    estado.textContent = error
+      ? "No pudimos enviar el enlace. Esperá un momento e intentá de nuevo."
+      : "Si ese email tiene una cuenta, recibirás un enlace para cambiar la contraseña. Revisá también el correo no deseado.";
+    if (error) console.error(error);
+  }
+
+  async function cambiarContrasena() {
+    const estado = document.getElementById("estado-auth");
+    if (!recuperacionValidada) {
+      estado.textContent = "El enlace todavía no se validó. Si venció, solicitá uno nuevo.";
+      return;
+    }
+    const password = document.getElementById("password-nueva").value;
+    const confirmacion = document.getElementById("password-confirmacion").value;
+    const boton = document.getElementById("btn-cambiar-contrasena");
+    if (password.length < 8) {
+      estado.textContent = "La nueva contraseña debe tener al menos 8 caracteres.";
+      return;
+    }
+    if (password !== confirmacion) {
+      estado.textContent = "Las contraseñas no coinciden.";
+      return;
+    }
+
+    boton.disabled = true;
+    estado.textContent = "Guardando contraseña...";
+    try {
+      const { data: { user }, error: errorUsuario } = await db.auth.getUser();
+      if (errorUsuario || !user) {
+        estado.textContent = "El enlace venció o no es válido. Solicitá uno nuevo con tu email.";
+        return;
+      }
+      const { error } = await db.auth.updateUser({ password });
+      if (error) {
+        estado.textContent = "No se pudo cambiar la contraseña. Solicitá un enlace nuevo e intentá otra vez.";
+        console.error(error);
+        return;
+      }
+      document.getElementById("password-nueva").value = "";
+      document.getElementById("password-confirmacion").value = "";
+      document.getElementById("recuperar-contrasena").hidden = true;
+      modoRecuperacion = false;
+      window.history.replaceState(null, "", window.location.pathname);
+      estado.textContent = "Contraseña actualizada correctamente.";
+      await iniciarAplicacion();
+    } catch (error) {
+      console.error(error);
+      estado.textContent = "No se pudo cambiar la contraseña. Intentá nuevamente.";
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+async function registrarse() {
+  const campoEmail = document.getElementById("email");
+  const email = campoEmail.value.trim();
+  const password = document.getElementById("password").value;
+  const estado = document.getElementById("estado-auth");
+  const boton = document.getElementById("btn-registrarse");
+
+  if (!email || !campoEmail.checkValidity()) {
+    estado.textContent = "Escribí un email válido.";
+    campoEmail.focus();
+    return;
+  }
+  if (password.length < 8) {
+    estado.textContent = "La contraseña debe tener al menos 8 caracteres.";
+    return;
+  }
+
+  boton.disabled = true;
+  estado.textContent = "Creando tu cuenta...";
+
+  try {
+    const { data, error } = await db.auth.signUp({ email, password });
+
+    if (error) {
+      const mensaje = error.message.toLowerCase();
+      if (mensaje.includes("already registered") || mensaje.includes("already been registered")) {
+        estado.textContent = "Ese email ya está registrado. Usá Iniciar sesión.";
+      } else if (mensaje.includes("password")) {
+        estado.textContent = "Elegí una contraseña de al menos 8 caracteres.";
+      } else if (mensaje.includes("email")) {
+        estado.textContent = "Revisá que el email esté bien escrito.";
+      } else {
+        estado.textContent = "No pudimos crear la cuenta. Intentá nuevamente.";
+      }
+      console.error(error);
+      return;
+    }
+
+    if (!data.session) {
+      estado.textContent = "La cuenta fue creada, pero todavía requiere confirmación por email.";
+      return;
+    }
+
+    document.getElementById("password").value = "";
+    estado.textContent = "¡Registro exitoso! Ya ingresaste a la aplicación.";
+    await iniciarAplicacion();
+  } catch (error) {
+    console.error(error);
+    estado.textContent = "No pudimos crear la cuenta. Revisá tu conexión e intentá nuevamente.";
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function iniciarSesion() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const estado = document.getElementById("estado-auth");
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    const mensaje = error.message.toLowerCase();
+    if (mensaje.includes("invalid login credentials")) {
+      estado.textContent = "El email o la contraseña son incorrectos.";
+    } else if (mensaje.includes("email not confirmed")) {
+      estado.textContent = "Esta cuenta todavía tiene pendiente la confirmación del email.";
+    } else {
+      estado.textContent = "No pudimos iniciar sesión. Intentá nuevamente.";
+    }
+    console.error(error);
+    return;
+  }
+
+  document.getElementById("password").value = "";
+  estado.textContent = "";
+  await iniciarAplicacion();
+}
+
+async function asegurarPerfilJugador() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return true;
+
+  const { error } = await db.rpc("asegurar_perfil_jugador");
+  if (!error) return true;
+
+  console.error(error);
+  document.getElementById("estado-auth").textContent =
+    "Ingresaste correctamente, pero no pudimos preparar tu perfil de jugador.";
+  return false;
+}
+
+async function actualizarEstadoAcceso() {
+  const formulario = document.getElementById("formulario-acceso");
+  const datosAcceso = document.getElementById("datos-acceso");
+  const bienvenida = document.getElementById("sesion-activa");
+  const { data: { user } } = await db.auth.getUser();
+
+  if (modoRecuperacion) {
+    formulario.hidden = false;
+    datosAcceso.hidden = true;
+    bienvenida.hidden = true;
+    return;
+  }
+
+  formulario.hidden = !!user;
+  bienvenida.hidden = !user;
+  datosAcceso.hidden = false;
+  if (!user) return;
+
+  const { data: jugador } = await db.from("jugadores")
+    .select("alias, activo, bloqueado")
+    .eq("email", user.email)
+    .maybeSingle();
+  const alias = jugador?.alias?.trim() || user.email.split("@")[0];
+  document.getElementById("bienvenida-alias").textContent = alias;
+  document.getElementById("bienvenida-email").textContent = user.email;
+  document.getElementById("bienvenida-mensaje").textContent = jugador?.activo === false
+    ? "Tu cuenta fue retirada del grupo. Contactá al administrador."
+    : jugador?.bloqueado
+      ? "Tu cuenta está bloqueada. Contactá al administrador."
+      : "Ya podés anotarte al próximo partido y administrar tu foto.";
+}
+
+function mostrarEditorAlias() {
+  const editor = document.getElementById("editor-alias");
+  const campo = document.getElementById("nuevo-alias");
+  campo.value = document.getElementById("bienvenida-alias").textContent;
+  document.getElementById("estado-alias").textContent = "";
+  editor.hidden = false;
+  campo.focus();
+}
+
+function cancelarEditorAlias() {
+  document.getElementById("editor-alias").hidden = true;
+  document.getElementById("estado-alias").textContent = "";
+}
+
+async function guardarAlias() {
+  const campo = document.getElementById("nuevo-alias");
+  const estado = document.getElementById("estado-alias");
+  const boton = document.getElementById("btn-guardar-alias");
+  const alias = campo.value.trim().replace(/\s+/g, " ");
+
+  if (alias.length < 2 || alias.length > 40) {
+    estado.textContent = "El nombre debe tener entre 2 y 40 caracteres.";
+    return;
+  }
+
+  boton.disabled = true;
+  estado.textContent = "Guardando nombre...";
+  try {
+    const { error } = await db.rpc("actualizar_alias_perfil", { nuevo_alias: alias });
+    if (error) {
+      estado.textContent = error.message?.includes("ya está en uso")
+        ? "Ese nombre ya está siendo usado por otro jugador."
+        : "No se pudo cambiar el nombre. Intentá nuevamente.";
+      console.error(error);
+      return;
+    }
+    document.getElementById("editor-alias").hidden = true;
+    document.getElementById("estado-auth").textContent = "Nombre actualizado correctamente.";
+    await iniciarAplicacion();
+  } catch (error) {
+    estado.textContent = "No se pudo cambiar el nombre. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function cerrarSesion() {
+  const estado = document.getElementById("estado-auth");
+  const { error } = await db.auth.signOut();
+  if (error) {
+    estado.textContent = "No se pudo cerrar la sesión. Intentá nuevamente.";
+    return;
+  }
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
+  estado.textContent = "Sesión cerrada correctamente.";
+  await iniciarAplicacion();
+}
+
+function fotoPublica(path) {
+  if (!path || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/.test(path)) return null;
+  return db.storage.from("jugadores-fotos").getPublicUrl(path).data.publicUrl;
+}
+
+function contenidoAvatar(jugador) {
+  const inicial = escaparHtml((jugador.alias || "J").charAt(0).toUpperCase());
+  const url = fotoPublica(jugador.foto_path);
+  return `${inicial}${url
+    ? `<img src="${escaparHtml(url)}" alt="" loading="lazy" onerror="this.remove()">`
+    : ""}`;
+}
+
+function mostrarFotoSeleccionada() {
+  const archivo = document.getElementById("archivo-foto").files?.[0];
+  document.getElementById("estado-foto").textContent = archivo
+    ? `Foto elegida: ${archivo.name}` : "Elegí una foto para tu perfil.";
+}
+
+async function actualizarPerfilFoto() {
+  const control = document.getElementById("perfil-foto");
+  const estado = document.getElementById("estado-foto");
+  const { data: { user } } = await db.auth.getUser();
+  control.hidden = !user;
+  if (!user) return;
+
+  const { data: jugador, error } = await db.from("jugadores")
+    .select("id, alias, foto_path, activo, bloqueado")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  const boton = document.getElementById("btn-guardar-foto");
+  const botonQuitar = document.getElementById("btn-quitar-foto");
+  boton.disabled = !!error || !jugador;
+  botonQuitar.hidden = true;
+  if (error || !jugador || jugador.activo === false || jugador.bloqueado) {
+    control.hidden = true;
+    estado.textContent = "Tu cuenta aún no figura como jugador. Pedile al administrador que te agregue al grupo.";
+    return;
+  }
+
+  document.getElementById("perfil-avatar").innerHTML = contenidoAvatar(jugador);
+  botonQuitar.hidden = !jugador.foto_path;
+  estado.textContent = jugador.foto_path ? "Podés cambiar tu foto cuando quieras." : "Elegí una foto para tu perfil.";
+}
+
+async function comprimirFoto(archivo) {
+  const url = URL.createObjectURL(archivo);
+  try {
+    const imagen = new Image();
+    await new Promise((resolver, rechazar) => {
+      imagen.onload = resolver;
+      imagen.onerror = () => rechazar(new Error("No se pudo abrir la imagen"));
+      imagen.src = url;
+    });
+
+    const escala = Math.min(1, 640 / Math.max(imagen.width, imagen.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(imagen.width * escala));
+    canvas.height = Math.max(1, Math.round(imagen.height * escala));
+    canvas.getContext("2d").drawImage(imagen, 0, 0, canvas.width, canvas.height);
+    return await new Promise((resolver, rechazar) => canvas.toBlob(
+      blob => blob ? resolver(blob) : rechazar(new Error("No se pudo procesar la foto")),
+      "image/jpeg", 0.82
+    ));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function guardarFotoPerfil() {
+  const estado = document.getElementById("estado-foto");
+  const input = document.getElementById("archivo-foto");
+  const boton = document.getElementById("btn-guardar-foto");
+  const archivo = input.files?.[0];
+
+  if (!archivo) {
+    estado.textContent = "Elegí una foto primero.";
+    return;
+  }
+  if (!["image/jpeg", "image/png", "image/webp"].includes(archivo.type) || archivo.size > 8 * 1024 * 1024) {
+    estado.textContent = "Elegí una imagen JPG, PNG o WebP de hasta 8 MB.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  const { data: jugador, error: errorJugador } = await db.from("jugadores")
+    .select("foto_path").eq("email", user.email).maybeSingle();
+  if (errorJugador || !jugador) {
+    estado.textContent = "Tu cuenta aún no figura como jugador del grupo.";
+    return;
+  }
+
+  boton.disabled = true;
+  estado.textContent = "Guardando foto...";
+  try {
+    const miniatura = await comprimirFoto(archivo);
+    const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+    const { error: errorSubida } = await db.storage.from("jugadores-fotos")
+      .upload(path, miniatura, { contentType: "image/jpeg", upsert: false });
+    if (errorSubida) throw errorSubida;
+
+    const { error: errorGuardado } = await db.rpc("guardar_foto_perfil", { nueva_foto_path: path });
+    if (errorGuardado) {
+      await db.storage.from("jugadores-fotos").remove([path]);
+      throw errorGuardado;
+    }
+
+    if (jugador.foto_path?.startsWith(`${user.id}/`)) {
+      await db.storage.from("jugadores-fotos").remove([jugador.foto_path]);
+    }
+    input.value = "";
+    await cargarJugadores();
+    await cargarInscriptos();
+    await cargarEquipos();
+    await actualizarPerfilFoto();
+    estado.textContent = "Foto de perfil actualizada.";
+  } catch (error) {
+    estado.textContent = "No se pudo guardar la foto. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function quitarFotoPerfil() {
+  const estado = document.getElementById("estado-foto");
+  const botonGuardar = document.getElementById("btn-guardar-foto");
+  const botonQuitar = document.getElementById("btn-quitar-foto");
+  if (!window.confirm("¿Querés quitar tu foto de perfil?")) return;
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  const { data: jugador, error: errorJugador } = await db.from("jugadores")
+    .select("foto_path").eq("email", user.email).maybeSingle();
+  if (errorJugador || !jugador) {
+    estado.textContent = "Tu cuenta aún no figura como jugador del grupo.";
+    return;
+  }
+  if (!jugador.foto_path) {
+    estado.textContent = "Tu perfil ya está sin foto.";
+    await actualizarPerfilFoto();
+    return;
+  }
+
+  botonGuardar.disabled = true;
+  botonQuitar.disabled = true;
+  estado.textContent = "Quitando foto...";
+  try {
+    const { error: errorGuardado } = await db.rpc("quitar_foto_perfil");
+    if (errorGuardado) throw errorGuardado;
+
+    if (jugador.foto_path.startsWith(`${user.id}/`)) {
+      const { error: errorBorrado } = await db.storage.from("jugadores-fotos").remove([jugador.foto_path]);
+      if (errorBorrado) console.error(errorBorrado);
+    }
+
+    document.getElementById("archivo-foto").value = "";
+    await cargarJugadores();
+    await cargarInscriptos();
+    await cargarEquipos();
+    await actualizarPerfilFoto();
+    estado.textContent = "Foto de perfil eliminada.";
+  } catch (error) {
+    estado.textContent = "No se pudo quitar la foto. Intentá nuevamente.";
+    console.error(error);
+  } finally {
+    botonGuardar.disabled = false;
+    botonQuitar.disabled = false;
+  }
+}
+
+  function alternarListaJugadores() {
+    const contenedor = document.getElementById("lista-jugadores");
+    const boton = document.getElementById("btn-ver-jugadores");
+    const abrir = contenedor.hidden;
+    contenedor.hidden = !abrir;
+    boton.setAttribute("aria-expanded", String(abrir));
+    boton.classList.toggle("abierto", abrir);
+    actualizarBotonListaJugadores();
+  }
+
+  function actualizarBotonListaJugadores(cantidad) {
+    const contenedor = document.getElementById("lista-jugadores");
+    const boton = document.getElementById("btn-ver-jugadores");
+    const total = cantidad ?? Number(boton.dataset.cantidad || 0);
+    boton.dataset.cantidad = String(total);
+    boton.innerHTML = `${contenedor.hidden ? "VER" : "OCULTAR"} JUGADORES (${total}) <i class="fa-solid fa-chevron-down"></i>`;
+  }
+
+  async function cargarJugadores() {
+  const esAdmin = await usuarioActualEsAdmin();
+  const consulta = esAdmin
+    ? db.rpc("listar_jugadores_gestion")
+    : db.rpc("listar_jugadores_publicos");
+  const { data, error } = await consulta;
+
+  const contenedor = document.getElementById("lista-jugadores");
+  const descripcion = document.getElementById("descripcion-jugadores");
+  descripcion.textContent = esAdmin
+    ? "Gestioná el grupo desde acá. Tu identidad como administrador no se muestra."
+    : "Jugadores que forman parte del grupo.";
+
+  if (error) {
+    contenedor.innerHTML = "<p>Error al cargar jugadores.</p>";
+    console.error(error);
+    return;
+  }
+
+  const jugadores = Array.isArray(data) ? data : [];
+  actualizarBotonListaJugadores(jugadores.length);
+  contenedor.innerHTML = jugadores.map(jugador => `
+  <div class="jugador ${jugador.activo === false ? "jugador-retirado" : ""}">
+
+    <div class="avatar">
+      ${contenidoAvatar(jugador)}
+    </div>
+
+    <div class="jugador-info">
+
+      <div class="jugador-nombre">
+        ${escaparHtml(jugador.alias)}
+      </div>
+
+      <div class="jugador-estado">
+        ${jugador.activo === false ? "Retirado del grupo" : jugador.bloqueado ? "Acceso bloqueado" : "Jugador del grupo"}
+      </div>
+
+    </div>
+
+    ${esAdmin ? `
+      <details class="gestion-jugador">
+        <summary>GESTIONAR</summary>
+        <label for="alias-admin-${escaparHtml(String(jugador.id))}">Nombre o apodo</label>
+        <input id="alias-admin-${escaparHtml(String(jugador.id))}" class="input-field" type="text" maxlength="40" value="${escaparHtml(jugador.alias)}">
+        <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', 'editar')">GUARDAR NOMBRE</button>
+        ${jugador.es_actual ? `<p class="gestion-aviso">Para bloquearte o retirarte, primero cedé la administración.</p>` : `<div class="gestion-jugador-acciones">
+          <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', '${jugador.bloqueado ? "desbloquear" : "bloquear"}')">
+            ${jugador.bloqueado ? "DESBLOQUEAR" : "BLOQUEAR"}
+          </button>
+          <button type="button" onclick="administrarJugador('${escaparHtml(String(jugador.id))}', '${jugador.activo === false ? "reactivar" : "retirar"}')">
+            ${jugador.activo === false ? "REINCORPORAR" : "RETIRAR"}
+          </button>
+        </div>`}
+        ${!jugador.es_actual && jugador.activo !== false && !jugador.bloqueado ? `
+          <button class="btn-ceder-admin" type="button" onclick="cederAdministracion('${escaparHtml(String(jugador.id))}')">
+            CEDER ADMINISTRACIÓN
+          </button>
+        ` : ""}
+      </details>
+    ` : ""}
+
+  </div>
+`).join("");
+}
+
+async function administrarJugador(id, accion) {
+  const estado = document.getElementById("estado-gestion-jugadores");
+  let nuevoAlias = null;
+  if (accion === "editar") {
+    nuevoAlias = document.getElementById(`alias-admin-${id}`).value.trim().replace(/\s+/g, " ");
+    if (nuevoAlias.length < 2 || nuevoAlias.length > 40) {
+      estado.textContent = "El nombre debe tener entre 2 y 40 caracteres.";
+      return;
+    }
+  } else {
+    const mensajes = {
+      bloquear: "¿Querés bloquear a este jugador? No podrá anotarse ni agregar invitados.",
+      desbloquear: "¿Querés desbloquear a este jugador?",
+      retirar: "¿Querés retirarlo del grupo? Se quitará de los partidos abiertos.",
+      reactivar: "¿Querés reincorporar a este jugador al grupo?"
+    };
+    if (!window.confirm(mensajes[accion])) return;
+  }
+
+  estado.textContent = "Guardando cambio...";
+  const { error } = await db.rpc("administrar_jugador", {
+    objetivo_id: String(id), accion, nuevo_alias: nuevoAlias
+  });
+  if (error) {
+    estado.textContent = error.message?.includes("primero ceder")
+      ? "No podés aplicarte esa acción. Primero cedé la administración."
+      : "No se pudo realizar el cambio.";
+    console.error(error);
+    return;
+  }
+  estado.textContent = "Cambio guardado correctamente.";
+  await iniciarAplicacion();
+}
+
+async function cederAdministracion(id) {
+  const estado = document.getElementById("estado-gestion-jugadores");
+  const alias = document.getElementById(`alias-admin-${id}`).value.trim();
+  if (!window.confirm(`¿Querés ceder la administración a ${alias}? Después solo esa persona podrá devolverla.`)) return;
+
+  estado.textContent = "Cediendo administración...";
+  const { error } = await db.rpc("transferir_administracion", { nuevo_admin_id: String(id) });
+  if (error) {
+    estado.textContent = "No se pudo ceder la administración.";
+    console.error(error);
+    return;
+  }
+  estado.textContent = "Administración transferida correctamente.";
+  await iniciarAplicacion();
+}
+async function cargarPartidos() {
+  const contenedor = document.getElementById("datos-partido");
+  const { data, error } = await db
+    .from("partidos")
+    .select("*")
+    .eq("estado", "abierto")
+    .order("fecha", { ascending: true });
+
+  if (error) {
+    partidoActualId = null;
+    contenedor.innerHTML = `
+      <div class="sin-partido">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <strong>No pudimos cargar el próximo partido</strong>
+        <span>Revisá tu conexión e intentá nuevamente.</span>
+        <button type="button" class="btn-secondary" onclick="iniciarAplicacion()">
+          REINTENTAR
+        </button>
+      </div>
+    `;
+    document.getElementById("acciones-admin-partido").style.display = "none";
+    document.getElementById("editor-partido").style.display = "none";
+    document.getElementById("creador-partido").style.display = "none";
+    document.getElementById("cupo-partido").style.display = "none";
+    document.getElementById("btn-anotarme").style.display = "none";
+    document.getElementById("btn-bajarme").style.display = "none";
+    document.getElementById("btn-compartir-partido").style.display = "none";
+    console.error("Error al cargar partidos:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint
+    });
+    return null;
+  }
+
+if (!data || data.length === 0) {
+  partidoActualId = null;
+  contenedor.innerHTML = `
+    <div class="sin-partido">
+      <i class="fa-regular fa-calendar-xmark"></i>
+      <strong>No hay un partido abierto</strong>
+      <span>El administrador puede programar el próximo encuentro.</span>
+    </div>
+  `;
+  document.getElementById("acciones-admin-partido").style.display = "none";
+  document.getElementById("editor-partido").style.display = "none";
+  document.getElementById("cupo-partido").style.display = "none";
+  document.getElementById("btn-anotarme").style.display = "none";
+  document.getElementById("btn-bajarme").style.display = "none";
+  document.getElementById("btn-compartir-partido").style.display = "none";
+
+  const esAdmin = await usuarioActualEsAdmin();
+  document.getElementById("creador-partido").style.display = esAdmin ? "block" : "none";
+
+  if (esAdmin) prepararFechaProximoPartido();
+  return null;
+}
+
+const partido = data[0];
+partidoActualId = partido.id;
+document.getElementById("btn-compartir-partido").style.display = "block";
+const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
+const fechaFormateada = fechaPartido
+  .toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  })
+  .toUpperCase();
+const horaFormateada = partido.hora ? partido.hora.slice(0, 5) : "21:00";
+
+contenedor.innerHTML = `
+  <div class="fixture-copy">
+    <strong>${partido.dia}</strong>
+    <span>${fechaFormateada}</span>
+  </div>
+  <div class="fixture-meta">
+    <span><i class="fa-regular fa-clock"></i> ${horaFormateada} HS</span>
+    <span><i class="fa-solid fa-location-dot"></i> Cancha habitual</span>
+  </div>
+  <span class="match-status">${partido.estado}</span>
+`;
+
+await configurarEdicionPartido(partido);
+return partido;
+}
+
+async function configurarEdicionPartido(partido) {
+  const esAdmin = await usuarioActualEsAdmin();
+
+  document.getElementById("acciones-admin-partido").style.display = esAdmin ? "grid" : "none";
+  document.getElementById("creador-partido").style.display = "none";
+  document.getElementById("cupo-partido").style.display = "block";
+  document.getElementById("partido-fecha").value = partido.fecha;
+  document.getElementById("partido-hora").value =
+    partido.hora ? partido.hora.slice(0, 5) : "21:00";
+}
+
+function mostrarEditorPartido() {
+  document.getElementById("editor-partido").style.display = "block";
+  document.getElementById("acciones-admin-partido").style.display = "none";
+  document.getElementById("estado-editor-partido").textContent = "";
+}
+
+function ocultarEditorPartido() {
+  document.getElementById("editor-partido").style.display = "none";
+  document.getElementById("acciones-admin-partido").style.display = "grid";
+  document.getElementById("estado-editor-partido").textContent = "";
+}
+
+async function guardarCambiosPartido() {
+  const fecha = document.getElementById("partido-fecha").value;
+  const hora = document.getElementById("partido-hora").value;
+  const estadoEditor = document.getElementById("estado-editor-partido");
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoEditor.textContent = "Solo el administrador puede modificar el partido.";
+    return;
+  }
+
+  if (!fecha || !hora) {
+    estadoEditor.textContent = "Elegí una fecha y una hora.";
+    return;
+  }
+
+  const fechaElegida = new Date(`${fecha}T12:00:00`);
+  const numeroDia = fechaElegida.getDay();
+
+  if (numeroDia !== 2 && numeroDia !== 5) {
+    estadoEditor.textContent = "La fecha debe ser un martes o un viernes.";
+    return;
+  }
+
+  const dia = numeroDia === 2 ? "martes" : "viernes";
+  estadoEditor.textContent = "Guardando cambios...";
+
+  const { data: partidoActualizado, error } = await db
+    .from("partidos")
+    .update({
+      fecha,
+      hora,
+      dia,
+      sorteo_confirmado: false
+    })
+    .eq("id", partidoActualId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !partidoActualizado) {
+    estadoEditor.textContent = "No se pudo actualizar la fecha y hora.";
+    return;
+  }
+
+  estadoEditor.textContent = "Fecha y hora actualizadas correctamente.";
+  await cargarPartidos();
+  await configurarSorteo();
+  await cargarEquipos();
+  document.getElementById("editor-partido").style.display = "none";
+}
+
+function prepararFechaProximoPartido() {
+  const fecha = new Date();
+  fecha.setHours(12, 0, 0, 0);
+
+  do {
+    fecha.setDate(fecha.getDate() + 1);
+  } while (fecha.getDay() !== 2 && fecha.getDay() !== 5);
+
+  const fechaLocal = [
+    fecha.getFullYear(),
+    String(fecha.getMonth() + 1).padStart(2, "0"),
+    String(fecha.getDate()).padStart(2, "0")
+  ].join("-");
+
+  document.getElementById("nuevo-partido-fecha").value = fechaLocal;
+  document.getElementById("nuevo-partido-hora").value = "21:00";
+}
+
+async function crearProximoPartido() {
+  const fecha = document.getElementById("nuevo-partido-fecha").value;
+  const hora = document.getElementById("nuevo-partido-hora").value;
+  const estadoCreador = document.getElementById("estado-creador-partido");
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoCreador.textContent = "Solo el administrador puede crear partidos.";
+    return;
+  }
+
+  if (!fecha || !hora) {
+    estadoCreador.textContent = "Elegí una fecha y una hora.";
+    return;
+  }
+
+  const fechaElegida = new Date(`${fecha}T12:00:00`);
+  const numeroDia = fechaElegida.getDay();
+
+  if (numeroDia !== 2 && numeroDia !== 5) {
+    estadoCreador.textContent = "El partido debe ser un martes o un viernes.";
+    return;
+  }
+
+  const dia = numeroDia === 2 ? "martes" : "viernes";
+  estadoCreador.textContent = "Creando partido...";
+
+  const { data: nuevoPartido, error } = await db
+    .from("partidos")
+    .insert({
+      dia,
+      fecha,
+      hora,
+      estado: "abierto",
+      sorteo_confirmado: false
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error || !nuevoPartido) {
+    estadoCreador.textContent = "No se pudo crear el partido.";
+    return;
+  }
+
+  partidoActualId = nuevoPartido.id;
+  estadoCreador.textContent = "Partido creado correctamente.";
+  await refrescarPartidoActual();
+}
+
+async function finalizarPartido() {
+  if (!partidoActualId || !(await usuarioActualEsAdmin())) return;
+
+  const confirmar = window.confirm(
+    "¿Querés finalizar este partido? Los inscriptos y equipos quedarán guardados en el historial."
+  );
+
+  if (!confirmar) return;
+
+  const { data: partidoFinalizado, error } = await db
+    .from("partidos")
+    .update({ estado: "finalizado" })
+    .eq("id", partidoActualId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !partidoFinalizado) {
+    document.getElementById("estado-inscripcion").textContent =
+      "No se pudo finalizar el partido.";
+    return;
+  }
+
+  partidoActualId = null;
+  document.getElementById("estado-inscripcion").textContent = "";
+  await refrescarPartidoActual();
+}
+
+async function refrescarPartidoActual() {
+  await cargarPartidos();
+  await actualizarControlInvitados();
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+function escaparHtml(valor) {
+  return String(valor).replace(/[&<>"']/g, caracter => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[caracter]);
+}
+
+async function obtenerParticipantes() {
+  if (!partidoActualId) return { data: [], error: null };
+
+  const [jugadores, invitados] = await Promise.all([
+    db.from("inscripciones")
+      .select("id, estado, equipo, jugadores(alias, foto_path)")
+      .eq("partido_id", partidoActualId),
+    db.from("invitados")
+      .select("id, alias, estado, equipo, agregado_por")
+      .eq("partido_id", partidoActualId)
+  ]);
+
+  if (jugadores.error || invitados.error) {
+    return { data: null, error: jugadores.error || invitados.error };
+  }
+
+  return {
+    data: [
+      ...jugadores.data.map(item => ({
+        ...item,
+        alias: item.jugadores?.alias || "Jugador",
+        foto_path: item.jugadores?.foto_path || null,
+        tipo: "jugador"
+      })),
+      ...invitados.data.map(item => ({ ...item, tipo: "invitado" }))
+    ],
+    error: null
+  };
+}
+
+async function actualizarControlInvitados() {
+  const control = document.getElementById("invitados-control");
+  const { data: { user } } = await db.auth.getUser();
+  const esJugador = user && (await db.from("jugadores")
+    .select("id, activo, bloqueado").eq("email", user.email).maybeSingle()).data;
+  control.style.display = partidoActualId && esJugador?.activo !== false && !esJugador?.bloqueado ? "block" : "none";
+}
+
+async function agregarInvitado() {
+  const campo = document.getElementById("alias-invitado");
+  const estado = document.getElementById("estado-invitados");
+  const boton = document.getElementById("btn-agregar-invitado");
+  const alias = campo.value.trim().replace(/\s+/g, " ");
+
+  if (!partidoActualId) {
+    estado.textContent = "Primero hay que crear un partido.";
+    return;
+  }
+  if (alias.length < 2 || alias.length > 40) {
+    estado.textContent = "Escribí un nombre de entre 2 y 40 caracteres.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) {
+    estado.textContent = "Primero iniciá sesión.";
+    return;
+  }
+
+  boton.disabled = true;
+  const { data: invitado, error } = await db.from("invitados")
+    .insert({ partido_id: partidoActualId, alias, agregado_por: user.id })
+    .select("estado")
+    .single();
+  boton.disabled = false;
+
+  if (error) {
+    estado.textContent = error.code === "23505"
+      ? "Ya hay un invitado con ese nombre en este partido."
+      : "No se pudo anotar al invitado. Revisá que el partido siga abierto.";
+    console.error(error);
+    return;
+  }
+
+  campo.value = "";
+  estado.textContent = invitado.estado === "titular"
+    ? `${alias} quedó anotado como titular.`
+    : `${alias} quedó anotado como suplente.`;
+  await cargarInscriptos();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+async function quitarInvitado(id) {
+  if (!partidoActualId) return;
+  const estado = document.getElementById("estado-invitados");
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  const { data, error } = await db.from("invitados")
+    .delete()
+    .eq("id", id)
+    .eq("partido_id", partidoActualId)
+    .eq("agregado_por", user.id)
+    .select("id");
+
+  if (error || !data?.length) {
+    estado.textContent = "No se pudo quitar al invitado.";
+    return;
+  }
+  estado.textContent = "Invitado quitado del partido.";
+  await cargarInscriptos();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+  async function cargarInscriptos() {
+  const contenedor = document.getElementById("lista-inscriptos");
+
+  if (!partidoActualId) {
+    contenedor.innerHTML = "<p class='estado'>No hay un partido abierto.</p>";
+    document.getElementById("cupo-numero").textContent = "0 / 14";
+    document.getElementById("barra-cupo").style.width = "0%";
+    document.getElementById("lugares-disponibles").textContent = "Esperando el próximo partido";
+    return;
+  }
+
+  const { data, error } = await obtenerParticipantes();
+
+  if (error) {
+    contenedor.innerHTML = "<p>Error al cargar inscriptos.</p>";
+    console.error(error);
+    return;
+  }
+const { data: { user } } = await db.auth.getUser();
+const cantidad = data.filter(
+  inscripcion => inscripcion.estado === "titular"
+).length;
+
+const lugares = Math.max(14 - cantidad, 0);
+const porcentaje = Math.min((cantidad / 14) * 100, 100);
+
+const cupoNumero = document.getElementById("cupo-numero");
+const barraCupo = document.getElementById("barra-cupo");
+const lugaresDisponibles = document.getElementById("lugares-disponibles");
+
+if (cupoNumero) {
+  cupoNumero.textContent = `${cantidad} / 14`;
+}
+
+if (barraCupo) {
+  barraCupo.style.width = `${porcentaje}%`;
+}
+
+if (lugaresDisponibles) {
+  lugaresDisponibles.textContent =
+    lugares === 1
+      ? "1 lugar disponible"
+      : `${lugares} lugares disponibles`;
+}
+  if (!data || data.length === 0) {
+    contenedor.innerHTML = "<p>Todavía no hay jugadores inscriptos.</p>";
+    return;
+  }
+
+  const titulares = data.filter(inscripcion => inscripcion.estado === "titular");
+const suplentes = data.filter(inscripcion => inscripcion.estado === "suplente");
+
+contenedor.innerHTML = `
+  <h3 class="section-title">Titulares (${titulares.length})</h3>
+
+  ${titulares.map(inscripcion => `
+    <div class="jugador">
+      <div class="avatar">
+        ${contenidoAvatar(inscripcion)}
+      </div>
+
+      <div class="jugador-info">
+        <div class="jugador-nombre">
+          ${escaparHtml(inscripcion.alias)}
+        </div>
+
+        <div class="jugador-estado">
+          ${inscripcion.tipo === "invitado" ? "Invitado confirmado" : "Confirmado para el partido"}
+        </div>
+      </div>
+
+      <span class="badge">
+        ${inscripcion.tipo === "invitado" ? "Invitado" : "Titular"}
+      </span>
+      ${inscripcion.tipo === "invitado" && inscripcion.agregado_por === user?.id
+        ? `<button class="quitar-invitado" type="button" onclick="quitarInvitado(${Number(inscripcion.id)})" aria-label="Quitar a ${escaparHtml(inscripcion.alias)}">Quitar</button>`
+        : ""}
+    </div>
+  `).join("")}
+
+  <h3 class="section-title">Suplentes (${suplentes.length})</h3>
+
+  ${
+    suplentes.length > 0
+      ? suplentes.map(inscripcion => `
+          <div class="jugador">
+            <div class="avatar">
+                ${contenidoAvatar(inscripcion)}
+            </div>
+
+            <div class="jugador-info">
+              <div class="jugador-nombre">
+                  ${escaparHtml(inscripcion.alias)}
+              </div>
+
+              <div class="jugador-estado">
+                  ${inscripcion.tipo === "invitado" ? "Invitado en lista de espera" : "En lista de espera"}
+              </div>
+            </div>
+
+            <span class="badge">
+              ${inscripcion.tipo === "invitado" ? "Invitado" : "Suplente"}
+            </span>
+            ${inscripcion.tipo === "invitado" && inscripcion.agregado_por === user?.id
+              ? `<button class="quitar-invitado" type="button" onclick="quitarInvitado(${Number(inscripcion.id)})" aria-label="Quitar a ${escaparHtml(inscripcion.alias)}">Quitar</button>`
+              : ""}
+          </div>
+        `).join("")
+      : "<p class='estado'>No hay suplentes.</p>"
+  }
+`;
+}
+  async function anotarme() {
+  const estado = document.getElementById("estado-inscripcion");
+
+if (!partidoActualId) {
+  estado.textContent = "No hay un partido abierto.";
+  return;
+}
+
+const { data: { user } } = await db.auth.getUser();
+
+if (!user) {
+  estado.textContent = "Primero tenés que iniciar sesión.";
+  return;
+}
+
+const { data: jugador, error: errorJugador } = await db
+  .from("jugadores")
+  .select("id, activo, bloqueado")
+  .eq("email", user.email)
+  .single();
+
+if (errorJugador || !jugador) {
+  estado.textContent = "No encontramos tu jugador.";
+  return;
+}
+if (jugador.activo === false || jugador.bloqueado) {
+  estado.textContent = "Tu cuenta no está habilitada para anotarse.";
+  return;
+}
+
+const { data: inscripcionExistente } = await db
+  .from("inscripciones")
+  .select("id")
+  .eq("partido_id", partidoActualId)
+  .eq("jugador_id", jugador.id)
+  .maybeSingle();
+
+if (inscripcionExistente) {
+  estado.textContent = "Ya estás anotado en este partido.";
+  return;
+}
+
+const { data: participantes, error: errorCupo } = await obtenerParticipantes();
+
+if (errorCupo) {
+  estado.textContent = "Error al comprobar los lugares disponibles.";
+  return;
+}
+
+const nuevoEstado = participantes.filter(item => item.estado === "titular").length < 14
+  ? "titular" : "suplente";
+
+const { error } = await db
+  .from("inscripciones")
+  .insert({
+    partido_id: partidoActualId,
+    jugador_id: jugador.id,
+    estado: nuevoEstado
+  });
+
+if (error) {
+  estado.textContent = "Error al anotarte: " + error.message;
+  return;
+}
+
+  estado.textContent = "Te anotaste correctamente.";
+await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+  async function bajarme() {
+  const estado = document.getElementById("estado-inscripcion");
+
+  if (!partidoActualId) {
+    estado.textContent = "No hay un partido abierto.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) {
+    estado.textContent = "Primero tenés que iniciar sesión.";
+    return;
+  }
+
+  const { data: jugador, error: errorJugador } = await db
+    .from("jugadores")
+    .select("id")
+    .eq("email", user.email)
+    .single();
+
+  if (errorJugador || !jugador) {
+    estado.textContent = "No encontramos tu jugador.";
+    return;
+  }
+
+  const { error } = await db
+    .from("inscripciones")
+    .delete()
+    .eq("partido_id", partidoActualId)
+    .eq("jugador_id", jugador.id);
+
+  if (error) {
+    estado.textContent = "Error al bajarte del partido.";
+    console.error(error);
+    return;
+  }
+
+  estado.textContent = "Te bajaste del partido correctamente.";
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+  async function actualizarBotonesInscripcion() {
+  const btnAnotarme = document.getElementById("btn-anotarme");
+  const btnBajarme = document.getElementById("btn-bajarme");
+
+  if (!partidoActualId) {
+    btnAnotarme.style.display = "none";
+    btnBajarme.style.display = "none";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+
+  if (!user) {
+    btnAnotarme.style.display = "block";
+    btnBajarme.style.display = "none";
+    return;
+  }
+
+  const { data: jugador } = await db
+    .from("jugadores")
+    .select("id, activo, bloqueado")
+    .eq("email", user.email)
+    .maybeSingle();
+
+  if (!jugador || jugador.activo === false || jugador.bloqueado) {
+    btnAnotarme.style.display = "none";
+    btnBajarme.style.display = "none";
+    return;
+  }
+
+  const { data: inscripciones } = await db
+    .from("inscripciones")
+    .select("id")
+    .eq("partido_id", partidoActualId)
+    .eq("jugador_id", jugador.id)
+    .limit(1);
+
+  const estaAnotado = inscripciones && inscripciones.length > 0;
+
+  btnAnotarme.style.display = estaAnotado ? "none" : "block";
+  btnBajarme.style.display = estaAnotado ? "block" : "none";
+}
+  async function configurarSorteo() {
+  const btnSortear = document.getElementById("btn-sortear");
+  const estadoSorteo = document.getElementById("estado-sorteo");
+
+  if (!partidoActualId) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent = "El sorteo estará disponible cuando se cree el próximo partido.";
+    return;
+  }
+
+  const { data: { user } } = await db.auth.getUser();
+
+  const { data: participantes, error: errorParticipantes } = await obtenerParticipantes();
+  if (errorParticipantes) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent = "No se pudo comprobar la lista de titulares.";
+    return;
+  }
+  const cantidad = participantes.filter(item => item.estado === "titular").length;
+
+  if (!user) {
+    btnSortear.style.display = "none";
+    estadoSorteo.textContent =
+      `El sorteo se habilita con 14 titulares. Actualmente hay ${cantidad}.`;
+    return;
+  }
+
+  const esAdmin = await usuarioActualEsAdmin();
+
+  btnSortear.style.display = esAdmin ? "block" : "none";
+  btnSortear.disabled = cantidad !== 14;
+  btnSortear.style.opacity = cantidad === 14 ? "1" : "0.5";
+
+  if (cantidad === 14) {
+    estadoSorteo.textContent = esAdmin
+      ? "Los 14 titulares están confirmados. Ya podés realizar el sorteo."
+      : "Los 14 titulares están confirmados. Esperando el sorteo.";
+  } else {
+    estadoSorteo.textContent =
+      `Faltan ${14 - cantidad} titulares para habilitar el sorteo.`;
+  }
+}
+
+let seleccionIntercambio = { A: null, B: null };
+
+async function usuarioActualEsAdmin() {
+  const { data, error } = await db.rpc("usuario_actual_es_admin");
+  return !error && data === true;
+}
+
+async function cargarEquipos() {
+  const resultado = document.getElementById("equipos-resultado");
+
+  if (!partidoActualId) {
+    resultado.innerHTML = "";
+    return;
+  }
+
+  const { data: partido, error: errorPartido } = await db
+    .from("partidos")
+    .select("sorteo_confirmado")
+    .eq("id", partidoActualId)
+    .maybeSingle();
+
+  if (errorPartido) {
+    resultado.innerHTML = "<p class=\"equipos-espera\">No se pudo comprobar el estado del sorteo.</p>";
+    return;
+  }
+
+  const sorteoConfirmado = partido && partido.sorteo_confirmado === true;
+
+  const { data, error } = await obtenerParticipantes();
+
+  if (error) {
+    resultado.innerHTML = "<p>Error al cargar los equipos.</p>";
+    return;
+  }
+
+  const esAdmin = await usuarioActualEsAdmin();
+  const equipoA = data.filter(inscripcion => inscripcion.estado === "titular" && inscripcion.equipo === "A");
+  const equipoB = data.filter(inscripcion => inscripcion.estado === "titular" && inscripcion.equipo === "B");
+
+  if (equipoA.length === 0 && equipoB.length === 0) {
+    resultado.innerHTML = "";
+    return;
+  }
+
+  if (!esAdmin && !sorteoConfirmado) {
+    resultado.innerHTML = `
+      <div class="equipos-espera">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <strong>Sorteo en revisión</strong>
+        <span>El administrador está equilibrando los equipos.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const botonSeleccion = (inscripcion, equipo) => esAdmin
+    ? `<button
+         type="button"
+         class="btn-seleccionar-jugador"
+         data-id="${inscripcion.id}"
+         data-tipo="${inscripcion.tipo}"
+         data-equipo="${equipo}"
+         onclick="seleccionarJugadorParaCambio(this)"
+         aria-label="Seleccionar a ${escaparHtml(inscripcion.alias)} del Equipo ${equipo}"
+       ><i class="fa-solid fa-arrow-right-arrow-left"></i></button>`
+    : "";
+
+  resultado.innerHTML = `
+    <div class="equipos-grid">
+      <div class="equipo-card">
+        <h3><span class="team-dot team-a"></span> Equipo A</h3>
+        <ol>
+          ${equipoA.map(inscripcion =>
+            `<li><span class="equipo-integrante"><span class="avatar equipo-avatar">${contenidoAvatar(inscripcion)}</span><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span></span>${botonSeleccion(inscripcion, "A")}</li>`
+          ).join("")}
+        </ol>
+      </div>
+
+      <div class="equipo-card">
+        <h3><span class="team-dot team-b"></span> Equipo B</h3>
+        <ol>
+          ${equipoB.map(inscripcion =>
+            `<li><span class="equipo-integrante"><span class="avatar equipo-avatar">${contenidoAvatar(inscripcion)}</span><span>${escaparHtml(inscripcion.alias)}${inscripcion.tipo === "invitado" ? " (invitado)" : ""}</span></span>${botonSeleccion(inscripcion, "B")}</li>`
+          ).join("")}
+        </ol>
+      </div>
+
+      ${esAdmin ? `
+        <div class="intercambio-panel">
+          <p>${sorteoConfirmado
+            ? "Los equipos están publicados. Podés intercambiar jugadores si necesitás corregirlos."
+            : "Elegí un jugador de cada equipo para intercambiarlos y confirmá cuando estén parejos."
+          }</p>
+          <button
+            id="btn-intercambiar"
+            type="button"
+            class="btn-secondary"
+            onclick="intercambiarJugadores()"
+            disabled
+          >
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            INTERCAMBIAR JUGADORES
+          </button>
+          <button
+            id="btn-confirmar-equipos"
+            type="button"
+            class="btn-primary"
+            onclick="confirmarEquipos()"
+            ${sorteoConfirmado ? "disabled" : ""}
+          >
+            <i class="fa-solid fa-circle-check"></i>
+            ${sorteoConfirmado ? "EQUIPOS CONFIRMADOS" : "CONFIRMAR Y PUBLICAR EQUIPOS"}
+          </button>
+          ${sorteoConfirmado ? `
+            <button
+              id="btn-compartir-whatsapp"
+              type="button"
+              class="btn-whatsapp"
+              onclick="compartirPartidoWhatsapp()"
+            >
+              <i class="fa-brands fa-whatsapp"></i>
+              COMPARTIR POR WHATSAPP
+            </button>
+          ` : ""}
+        </div>
+      ` : ""}
+    </div>
+  `;
+
+  seleccionIntercambio = { A: null, B: null };
+}
+
+function seleccionarJugadorParaCambio(boton) {
+  const equipo = boton.dataset.equipo;
+  const seleccionado = `${boton.dataset.tipo}:${boton.dataset.id}`;
+
+  seleccionIntercambio[equipo] =
+    seleccionIntercambio[equipo] === seleccionado ? null : seleccionado;
+
+  document
+    .querySelectorAll(`.btn-seleccionar-jugador[data-equipo="${equipo}"]`)
+    .forEach(opcion => {
+      opcion.classList.toggle(
+        "seleccionado",
+        `${opcion.dataset.tipo}:${opcion.dataset.id}` === seleccionIntercambio[equipo]
+      );
+    });
+
+  const btnIntercambiar = document.getElementById("btn-intercambiar");
+  btnIntercambiar.disabled =
+    !seleccionIntercambio.A || !seleccionIntercambio.B;
+}
+
+async function intercambiarJugadores() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+  const btnIntercambiar = document.getElementById("btn-intercambiar");
+
+  if (!seleccionIntercambio.A || !seleccionIntercambio.B) {
+    estadoSorteo.textContent = "Elegí un jugador de cada equipo.";
+    return;
+  }
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede modificar los equipos.";
+    return;
+  }
+
+  btnIntercambiar.disabled = true;
+  estadoSorteo.textContent = "Intercambiando jugadores...";
+
+  const { error: errorRevision } = await db
+    .from("partidos")
+    .update({ sorteo_confirmado: false })
+    .eq("id", partidoActualId);
+
+  if (errorRevision) {
+    estadoSorteo.textContent = "No se pudo abrir el sorteo para hacer cambios.";
+    btnIntercambiar.disabled = false;
+    return;
+  }
+
+  const [tipoA, idA] = seleccionIntercambio.A.split(":");
+  const [tipoB, idB] = seleccionIntercambio.B.split(":");
+  const tablaA = tipoA === "invitado" ? "invitados" : "inscripciones";
+  const tablaB = tipoB === "invitado" ? "invitados" : "inscripciones";
+
+  const { data: cambioA, error: errorA } = await db
+    .from(tablaA)
+    .update({ equipo: "B" })
+    .eq("id", idA)
+    .eq("partido_id", partidoActualId)
+    .eq("equipo", "A")
+    .select("id")
+    .maybeSingle();
+
+  if (errorA || !cambioA) {
+    estadoSorteo.textContent = "No se pudo cambiar el jugador del Equipo A.";
+    btnIntercambiar.disabled = false;
+    return;
+  }
+
+  const { data: cambioB, error: errorB } = await db
+    .from(tablaB)
+    .update({ equipo: "A" })
+    .eq("id", idB)
+    .eq("partido_id", partidoActualId)
+    .eq("equipo", "B")
+    .select("id")
+    .maybeSingle();
+
+  if (errorB || !cambioB) {
+    const { error: errorReversion } = await db
+      .from(tablaA)
+      .update({ equipo: "A" })
+      .eq("id", idA)
+      .eq("partido_id", partidoActualId);
+
+    estadoSorteo.textContent = errorReversion
+      ? "El intercambio quedó incompleto. Revisá los equipos antes de confirmar."
+      : "No se pudo completar el intercambio.";
+    btnIntercambiar.disabled = false;
+    return;
+  }
+
+  seleccionIntercambio = { A: null, B: null };
+  estadoSorteo.textContent = "Jugadores intercambiados correctamente.";
+  await cargarEquipos();
+  await cargarInscriptos();
+}
+
+async function confirmarEquipos() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+  const btnConfirmar = document.getElementById("btn-confirmar-equipos");
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede confirmar los equipos.";
+    return;
+  }
+
+  const { data: equipos, error } = await obtenerParticipantes();
+
+  if (error) {
+    estadoSorteo.textContent = "No se pudieron comprobar los equipos.";
+    return;
+  }
+
+  const cantidadA = equipos.filter(jugador => jugador.estado === "titular" && jugador.equipo === "A").length;
+  const cantidadB = equipos.filter(jugador => jugador.estado === "titular" && jugador.equipo === "B").length;
+
+  if (cantidadA !== 7 || cantidadB !== 7 ||
+      equipos.filter(jugador => jugador.estado === "titular").length !== 14) {
+    estadoSorteo.textContent = "Antes de confirmar debe haber 7 jugadores en cada equipo.";
+    return;
+  }
+
+  btnConfirmar.disabled = true;
+  estadoSorteo.textContent = "Publicando el resultado...";
+
+  const { data: partidoActualizado, error: errorConfirmacion } = await db
+    .from("partidos")
+    .update({ sorteo_confirmado: true })
+    .eq("id", partidoActualId)
+    .select("id")
+    .maybeSingle();
+
+  if (errorConfirmacion || !partidoActualizado) {
+    estadoSorteo.textContent = "No se pudo publicar el resultado.";
+    btnConfirmar.disabled = false;
+    return;
+  }
+
+  estadoSorteo.textContent = "¡Equipos confirmados y publicados para todos!";
+  await cargarEquipos();
+}
+
+async function compartirPartidoWhatsapp() {
+  const estado = document.getElementById("estado-inscripcion");
+
+  if (!partidoActualId) {
+    estado.textContent = "No hay un partido abierto para compartir.";
+    return;
+  }
+
+  const { data: partido, error: errorPartido } = await db
+    .from("partidos")
+    .select("dia, fecha, hora, sorteo_confirmado")
+    .eq("id", partidoActualId)
+    .maybeSingle();
+
+  if (errorPartido || !partido) {
+    estado.textContent = "No se pudo preparar el partido para compartir.";
+    return;
+  }
+
+  const { data: inscripciones, error } = await obtenerParticipantes();
+
+  if (error) {
+    estado.textContent = "No se pudo preparar la lista para compartir.";
+    return;
+  }
+
+  const titulares = inscripciones.filter(jugador => jugador.estado === "titular");
+  const equipoA = inscripciones.filter(jugador =>
+    jugador.estado === "titular" && jugador.equipo === "A"
+  );
+  const equipoB = inscripciones.filter(jugador =>
+    jugador.estado === "titular" && jugador.equipo === "B"
+  );
+  const suplentes = inscripciones.filter(jugador => jugador.estado === "suplente");
+
+  const fechaPartido = new Date(`${partido.fecha}T12:00:00`);
+  const fechaFormateada = fechaPartido.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  const horaFormateada = partido.hora ? partido.hora.slice(0, 5) : "21:00";
+  const listar = lista => lista
+    .map((jugador, indice) => `${indice + 1}. ${jugador.alias}${jugador.tipo === "invitado" ? " (invitado)" : ""}`)
+    .join("\n");
+  const enlaceApp = `${window.location.origin}${window.location.pathname}`;
+
+  let mensaje =
+`*¡DALE QUE SE JUEGA!*
+
+*PRÓXIMO PARTIDO*
+*Día:* ${partido.dia.toUpperCase()} ${fechaFormateada}
+*Hora:* ${horaFormateada} HS`;
+
+  if (partido.sorteo_confirmado && equipoA.length === 7 && equipoB.length === 7) {
+    mensaje += `
+
+*EQUIPO A*
+${listar(equipoA)}
+
+*EQUIPO B*
+${listar(equipoB)}`;
+
+    if (suplentes.length > 0) {
+      mensaje += `\n\n*SUPLENTES*\n${listar(suplentes)}`;
+    }
+  } else {
+    const faltan = Math.max(14 - titulares.length, 0);
+    mensaje += `\n\n*Anotados: ${titulares.length}/14*`;
+    mensaje += faltan > 0
+      ? `\n${faltan === 1 ? "Falta 1 jugador" : `Faltan ${faltan} jugadores`}`
+      : "\nCupo completo";
+    mensaje += `\n\n*Anotate acá:*\n${enlaceApp}`;
+  }
+
+  mensaje += "\n\n_Buen fútbol, buenos amigos_";
+
+  const enlace = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+  const ventana = document.createElement("a");
+  ventana.href = enlace;
+  ventana.target = "_blank";
+  ventana.rel = "noopener noreferrer";
+  document.body.appendChild(ventana);
+  ventana.click();
+  ventana.remove();
+}
+
+async function sortearEquipos() {
+  const estadoSorteo = document.getElementById("estado-sorteo");
+
+  if (!partidoActualId) {
+    estadoSorteo.textContent = "No hay un partido abierto.";
+    return;
+  }
+
+  if (!(await usuarioActualEsAdmin())) {
+    estadoSorteo.textContent = "Solo el administrador puede sortear los equipos.";
+    return;
+  }
+
+  const { data: participantes, error } = await obtenerParticipantes();
+  const titulares = participantes?.filter(item => item.estado === "titular");
+
+  if (error) {
+    estadoSorteo.textContent = "Error al obtener los titulares.";
+    return;
+  }
+
+  if (!titulares || titulares.length !== 14) {
+    estadoSorteo.textContent =
+      "El sorteo necesita exactamente 14 titulares.";
+    return;
+  }
+
+  const { error: errorRevision } = await db
+    .from("partidos")
+    .update({ sorteo_confirmado: false })
+    .eq("id", partidoActualId);
+
+  if (errorRevision) {
+    estadoSorteo.textContent = "No se pudo iniciar la revisión del sorteo.";
+    return;
+  }
+
+  const mezclados = [...titulares];
+
+  for (let i = mezclados.length - 1; i > 0; i--) {
+    const posicion = Math.floor(Math.random() * (i + 1));
+    [mezclados[i], mezclados[posicion]] =
+      [mezclados[posicion], mezclados[i]];
+  }
+
+  const resultados = await Promise.all(
+    mezclados.map((inscripcion, indice) =>
+      db
+        .from(inscripcion.tipo === "invitado" ? "invitados" : "inscripciones")
+        .update({ equipo: indice < 7 ? "A" : "B" })
+        .eq("id", inscripcion.id)
+        .eq("partido_id", partidoActualId)
+        .select("id")
+    )
+  );
+
+  const huboError = resultados.some(resultado =>
+    resultado.error || resultado.data?.length !== 1
+  );
+
+  if (huboError) {
+    estadoSorteo.textContent = "El sorteo quedó incompleto. Volvé a sortear antes de confirmar.";
+    await cargarEquipos();
+    return;
+  }
+
+  estadoSorteo.textContent =
+    "Sorteo realizado. Revisá los equipos y confirmalos cuando estén parejos.";
+  seleccionIntercambio = { A: null, B: null };
+  await cargarInscriptos();
+  await cargarEquipos();
+}
+async function iniciarAplicacion() {
+  await asegurarPerfilJugador();
+  await actualizarEstadoAcceso();
+  await cargarJugadores();
+  await actualizarPerfilFoto();
+  await cargarPartidos();
+  await actualizarControlInvitados();
+  await cargarInscriptos();
+  await actualizarBotonesInscripcion();
+  await configurarSorteo();
+  await cargarEquipos();
+}
+
+let eventoInstalacion = null;
+const botonInstalarApp = document.getElementById("btn-instalar-app");
+const modoAplicacion = window.matchMedia("(display-mode: standalone)");
+const estaInstalada = () =>
+  modoAplicacion.matches ||
+  window.navigator.standalone === true ||
+  window.localStorage.getItem("dale-que-se-juega-instalada") === "si";
+const esDispositivoIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+window.addEventListener("beforeinstallprompt", evento => {
+  evento.preventDefault();
+  eventoInstalacion = evento;
+  window.localStorage.removeItem("dale-que-se-juega-instalada");
+  if (!estaInstalada()) botonInstalarApp.hidden = false;
+});
+
+if (esDispositivoIOS && !estaInstalada()) {
+  botonInstalarApp.hidden = false;
+}
+
+botonInstalarApp.addEventListener("click", async () => {
+  if (eventoInstalacion) {
+    eventoInstalacion.prompt();
+    await eventoInstalacion.userChoice;
+    eventoInstalacion = null;
+    botonInstalarApp.hidden = true;
+    return;
+  }
+
+  window.alert("En iPhone: abrí esta página con Safari, tocá Compartir y elegí Agregar a pantalla de inicio.");
+});
+
+window.addEventListener("appinstalled", () => {
+  window.localStorage.setItem("dale-que-se-juega-instalada", "si");
+  botonInstalarApp.hidden = true;
+  eventoInstalacion = null;
+});
+
+modoAplicacion.addEventListener?.("change", () => {
+  if (estaInstalada()) botonInstalarApp.hidden = true;
+});
+
+window.addEventListener("pageshow", () => {
+  if (estaInstalada()) botonInstalarApp.hidden = true;
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(error => {
+      console.error("No se pudo registrar la aplicación:", error);
+    });
+  });
+}
+
+iniciarAplicacion();
+  
+</script>
+</body>
+</html>
